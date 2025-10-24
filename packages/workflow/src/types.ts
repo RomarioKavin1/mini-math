@@ -1,55 +1,28 @@
-export type WorkflowId = string
-export type NodeId = string
-export type NodeType = string
-export type PortId = string
-export type RunId = string
+import { z } from 'zod'
+import { NodeDef, NodeRef } from '@mini-math/nodes'
+import { WORKFLOW_CONSTANTS } from '@mini-math/utils'
 
-export type Json = null | boolean | number | string | Json[] | { [k: string]: Json }
-
-export interface CostHint {
-  base: number
-  perItem?: number
-  memory?: number // MB
-  externalFeesUSD?: number // e.g., API costs
-}
-
-export interface DagNode {
-  id: NodeId
-  type: NodeType
-  inputs: PortId[]
-  outputs: PortId[]
-  config?: Json
-}
-
-export interface Edge {
-  from: { node: NodeId; port: PortId }
-  to: { node: NodeId; port: PortId }
-}
-
-export interface Dag {
-  id: WorkflowId
-  name?: string
-  nodes: DagNode[]
-  edges: Edge[]
-}
-
-export interface ExecCtx {
-  runId: RunId
-  log(message: string): void
-}
-
-export interface NodeSpec<I = Json, O = Json> {
-  type: NodeType // stable logical key (e.g., "js.eval.v1")
-  deterministic: boolean // false => side-effecting activity
-  plan(shape: I): CostHint // compile-time estimate only
-  exec(input: I, ctx: ExecCtx): Promise<O> | O // runtime invocation (implementation elsewhere)
-  inputSchema?: unknown // optional schema references (zod/io-ts later)
-  outputSchema?: unknown
-}
-
-export interface NodeRegistry {
-  get(type: NodeType): NodeSpec | undefined
-  has(type: NodeType): boolean
-  list(): NodeSpec[]
-  register(spec: NodeSpec): void // registration only; no side effects here
-}
+export const WorkflowSchema = z.object({
+  id: z.string().optional(),
+  name: z.string(),
+  version: z.string(), // immutable once published
+  nodes: z.array(NodeDef).min(1),
+  edges: z.array(
+    z.object({
+      from: NodeRef,
+      to: NodeRef,
+      condition: z.string().optional(), // expression string
+    }),
+  ),
+  entry: NodeRef, // start node
+  // global execution policies: May be used latter
+  policies: z
+    .object({
+      defaultTimeoutMs: z.number().int().min(1).default(WORKFLOW_CONSTANTS.DEFAULT_TIMEOUT_MS),
+      maxParallel: z.number().int().min(1).default(WORKFLOW_CONSTANTS.MAX_PARALLEL),
+    })
+    .default({
+      defaultTimeoutMs: WORKFLOW_CONSTANTS.DEFAULT_TIMEOUT_MS,
+      maxParallel: WORKFLOW_CONSTANTS.MAX_PARALLEL,
+    }),
+})

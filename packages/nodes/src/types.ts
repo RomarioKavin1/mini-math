@@ -1,27 +1,29 @@
-import { CostHint, Json, NodeSpec, NodeType } from '@mini-math/workflow'
+import { z } from 'zod'
 
-export interface JSNodeConfig<I = Json, O = Json> {
-  type: NodeType // e.g., 'js.eval.v1'
-  code: string // user function source
-  deterministic?: boolean // default true
-  timeoutMs?: number // default 2000
-  memoryMb?: number // default 64
-  estimate?: (shape: I) => CostHint
+export const NodeRef = z.string().min(16);
+
+export enum NodeType {
+  'http.request',
+  'map',
+  'code',
 }
 
-export abstract class ScriptSandbox {
-  abstract run<I, O>(
-    code: string,
-    input: I,
-    options: {
-      timeoutMs?: number
-      memoryMb?: number
-      seed?: string | number
-      allowNetwork?: boolean
-    },
-  ): Promise<O>
-}
+export const Input = z.object({
+  name: z.string(),
+  type: z.string(),
+  required: z.boolean().optional(),
+})
 
-export abstract class ScriptNodeFactory {
-  abstract create<I, O>(cfg: JSNodeConfig<I, O>): NodeSpec<I, O>
-}
+export const Output = z.object({ name: z.string(), type: z.string() })
+
+export const NodeDef = z.object({
+  id: NodeRef,
+  type: z.enum(NodeType),
+  name: z.string().optional(),
+  config: z.json().default({}),
+  data: z.json().optional(),
+  inputs: z.array(z.object(Input)).default([]),
+  outputs: z.array(z.object(Output)).default([]),
+  executed: z.boolean().default(false),
+  code: z.string().optional(),
+})
