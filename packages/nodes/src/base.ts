@@ -1,8 +1,8 @@
-import { NodeDef, Input, Output } from './types.js'
+import { NodeDef, Input, Output, ExecutableNode } from './types.js'
 import { z } from 'zod'
 import { ERROR_CODES } from './errors.js'
 
-export abstract class BaseNode {
+export abstract class BaseNode implements ExecutableNode {
   constructor(private nodeDef: z.infer<typeof NodeDef>) {}
 
   public readInputs(): z.infer<(typeof Input)[]> {

@@ -1,0 +1,53 @@
+import { PrinterNodeFactory } from '@mini-math/compiler'
+import { Workflow, WorkflowDef } from '@mini-math/workflow'
+import { basicProgramJson } from './basic.js'
+import { EdgeDefType, NodeDefType, NodeType } from '@mini-math/nodes'
+
+const nodes: NodeDefType[] = basicProgramJson.nodes.map((a) => {
+  return {
+    id: a.id,
+    type: NodeType.code,
+    name: 'code',
+    config: {},
+    data: {},
+    inputs: [],
+    outputs: [],
+    executed: false,
+  }
+})
+const edges: EdgeDefType[] = basicProgramJson.connections.map((a) => {
+  return {
+    from: a.source.nodeId,
+    to: a.target.nodeId,
+    id: a.id,
+  }
+})
+
+const workflowJson: WorkflowDef = {
+  id: basicProgramJson.id,
+  name: basicProgramJson.name,
+  version: '0.1.0',
+  nodes,
+  edges,
+  entry: basicProgramJson.nodes[0].id,
+  runtime: { queue: [], visited: [], current: null, finished: false },
+  policies: { defaultTimeoutMs: 1000, maxParallel: 1 },
+}
+let workflow = new Workflow(workflowJson, new PrinterNodeFactory())
+
+async function run() {
+  while (!workflow.isFinished()) {
+    let info = await workflow.clock()
+
+    console.log(info.status)
+    if (info.node) {
+      console.log(info.node.id, 'clocked')
+    }
+
+    workflow = new Workflow(workflow.serialize(), new PrinterNodeFactory())
+  }
+
+  return 'Done Workflow Execution'
+}
+
+run().then(console.log).catch(console.error)

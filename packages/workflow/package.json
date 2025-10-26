@@ -34,7 +34,9 @@
     "tsup": "^8.3.0"
   },
   "dependencies": {
-    "zod": "^4.1.12",
-    "@mini-math/nodes": "^0.1.0"
+    "@mini-math/nodes": "^0.1.0",
+    "@mini-math/runtime": "^0.1.0",
+    "@mini-math/utils": "^0.1.0",
+    "zod": "^4.1.12"
   }
 }

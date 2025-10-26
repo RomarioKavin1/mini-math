@@ -2,13 +2,9 @@
   "extends": "@mini-math/tsconfig/tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": "./",
+    "noEmit": false,
     "rootDir": "src",
     "outDir": "dist",
-    "composite": true,
-    "declaration": true,
-    "noEmit": false,
-    "declarationMap": false,
-    "emitDeclarationOnly": false,
     "sourceMap": true
   },
   "include": ["src"]
