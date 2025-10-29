@@ -42,10 +42,7 @@ async function run() {
   while (!workflow.isFinished()) {
     let info = await workflow.clock()
 
-    console.log(info.status)
-    if (info.node) {
-      console.log(info.node.id, 'clocked')
-    }
+    console.log(JSON.stringify((info as any).node.inputs, null, 2))
 
     workflow = new Workflow(workflow.serialize(), printerNodeFactory)
   }

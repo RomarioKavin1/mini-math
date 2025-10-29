@@ -1,19 +1,43 @@
-import { ExecutableNode, NodeDefType, NodeFactoryType } from '@mini-math/nodes'
+import {
+  BaseNode,
+  ExecutableNodeBase,
+  NodeDefType,
+  NodeFactoryType,
+  OutputType,
+} from '@mini-math/nodes'
+import z from 'zod'
+export class PrinterNode extends BaseNode {
+  constructor(nodeDef: NodeDefType) {
+    super(nodeDef)
+  }
 
-export class PrinterNode implements ExecutableNode {
-  constructor(private nodeDef: NodeDefType) {}
-  async execute(): Promise<this> {
+  protected async _nodeExecutionLogic(): Promise<OutputType[]> {
+    // log stuff if you still want diagnostics
     console.log('Id: ', this.nodeDef.id)
     console.log('Name: ', this.nodeDef.name)
     console.log('Input: ', this.nodeDef.inputs)
-    console.log('Outputs: ', this.nodeDef.outputs)
+    console.log('Outputs (pre-exec): ', this.nodeDef.outputs)
 
-    return this
+    // transform inputs -> outputs
+    const all_id = this.nodeDef.inputs.reduce(
+      (acc, i) => (acc ? `${acc}-${i.id}` : `${i.id}`),
+      `ids-${this.nodeDef.id}`,
+    )
+    const all_names = this.nodeDef.inputs.reduce(
+      (acc, i) => (acc ? `${acc}-${i.name}` : `${i.name}`),
+      `names-${this.nodeDef.name}`,
+    )
+    const all_type = this.nodeDef.inputs.reduce(
+      (acc, i) => (acc ? `${acc}-${i.type}` : `${i.type}`),
+      `types-${this.nodeDef.type}`,
+    )
+
+    return [{ id: all_id, name: all_names, type: all_type }]
   }
 }
+
 export class PrinterNodeFactory implements NodeFactoryType {
-  make(node: NodeDefType): PrinterNode {
-    const printerNode = new PrinterNode(node)
-    return printerNode
+  make(node: NodeDefType): ExecutableNodeBase {
+    return new PrinterNode(node)
   }
 }

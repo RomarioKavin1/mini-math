@@ -1,7 +1,7 @@
-import { WorkflowSchema } from './types.js'
+import { WorkflowDef } from './types.js'
 import z from 'zod'
 
-export function hasCycle(workflowDef: z.infer<typeof WorkflowSchema>): boolean {
+export function hasCycle(workflowDef: WorkflowDef): boolean {
   const inDegree = new Map<string, number>()
   workflowDef.nodes.forEach((n) => inDegree.set(n.id, 0))
 
@@ -32,7 +32,7 @@ export function hasCycle(workflowDef: z.infer<typeof WorkflowSchema>): boolean {
   return visitedCount !== workflowDef.nodes.length
 }
 
-export function bfsTraverse(workflowDef: z.infer<typeof WorkflowSchema>): void {
+export function bfsTraverse(workflowDef: WorkflowDef): void {
   const { nodes, edges, entry } = workflowDef
   const nodeById = new Map(nodes.map((n) => [n.id, n]))
 

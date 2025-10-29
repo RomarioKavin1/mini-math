@@ -1,31 +1,62 @@
-import { NodeDef, Input, Output, ExecutableNode } from './types.js'
+import {
+  Input,
+  Output,
+  ExecutableNodeBase,
+  ExecutionResult,
+  NodeDefType,
+  OutputType,
+  InputType,
+} from './types/index.js'
 import { z } from 'zod'
 import { ERROR_CODES } from './errors.js'
 
-export abstract class BaseNode implements ExecutableNode {
-  constructor(private nodeDef: z.infer<typeof NodeDef>) {}
+export interface NodeFactoryType {
+  make(node: NodeDefType): ExecutableNodeBase
+}
 
-  public readInputs(): z.infer<(typeof Input)[]> {
+export abstract class BaseNode implements ExecutableNodeBase {
+  protected nodeDef: NodeDefType
+  constructor(nodeDef: NodeDefType) {
+    this.nodeDef = nodeDef
+  }
+
+  public readInputs(): InputType[] {
     return this.nodeDef.inputs
   }
 
-  public readonly(): z.infer<(typeof Output)[]> {
-    if (!this.nodeDef.executed) return new Error(ERROR_CODES.NODE_IS_NOT_EXECUTED)
+  public readonly(): OutputType[] {
+    if (!this.nodeDef.executed) throw new Error(ERROR_CODES.NODE_IS_NOT_EXECUTED)
 
     return this.nodeDef.outputs
   }
 
-  protected abstract _nodeExecutionLogc(): Promise<(typeof Output)[]>
+  protected abstract _nodeExecutionLogic(): Promise<OutputType[]>
 
-  public async execute(): Promise<this> {
+  public async execute(): Promise<ExecutionResult> {
+    // Option A: refuse re-execution at node level and surface that as 'error'
     if (this.nodeDef.executed) {
-      throw new Error(ERROR_CODES.NODE_IS_ALREADY_EXECUTED)
+      return {
+        status: 'error',
+        payload: {
+          nodeId: this.nodeDef.id,
+          outputs: this.nodeDef.outputs ?? [],
+          errorCode: ERROR_CODES.NODE_IS_ALREADY_EXECUTED,
+        },
+      }
     }
 
-    const outputs = await this._nodeExecutionLogc()
-    this.nodeDef.executed = true
-    this.nodeDef.outputs = outputs
+    // Run the node's real logic — but do not mutate nodeDef here.
+    const outputs = await this._nodeExecutionLogic()
 
-    return this
+    // Return a description of what happened.
+    return {
+      status: 'ok',
+      payload: {
+        nodeId: this.nodeDef.id,
+        outputs,
+      },
+      // next?: can be set by subclasses if they want to branch
+      // terminateRun?: can also be set in subclass
+    }
   }
 }

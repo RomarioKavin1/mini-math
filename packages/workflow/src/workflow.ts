@@ -1,17 +1,16 @@
-import { ERROR_CODES, NodeDefType, NodeFactoryType } from '@mini-math/nodes'
+import { ERROR_CODES, NodeDefType, NodeFactoryType, ExecutionResult } from '@mini-math/nodes'
 import { ClockResult, WorkflowDef } from './types.js'
 import { bfsTraverse, hasCycle } from './helper.js'
 
 export class Workflow {
   private nodeById: Map<string, NodeDefType>
   private outgoing: Map<string, string[]>
-  private initialized: boolean = false
+  private initialized = false
 
   constructor(
     private workflowDef: WorkflowDef,
     private nodeFactory: NodeFactoryType,
   ) {
-    // Build helper maps for quick traversal.
     this.nodeById = new Map(this.workflowDef.nodes.map((n) => [n.id, n]))
 
     this.outgoing = new Map<string, string[]>()
@@ -25,7 +24,6 @@ export class Workflow {
       this.outgoing.get(e.from)!.push(e.to)
     }
 
-    // Bootstrap runtime if it's empty.
     if (!this.workflowDef.runtime) {
       this.workflowDef.runtime = {
         queue: [],
@@ -35,7 +33,6 @@ export class Workflow {
       }
     }
 
-    // If it's a brand new traversal, seed BFS queue with entry.
     if (
       this.workflowDef.runtime.queue.length === 0 &&
       this.workflowDef.runtime.visited.length === 0 &&
@@ -46,66 +43,130 @@ export class Workflow {
   }
 
   public bfs(): void {
-    this.initialize()
+    this._initialize()
     bfsTraverse(this.workflowDef)
   }
 
-  private initialize(): boolean {
-    if (!this.initialized) {
-      if (hasCycle(this.workflowDef)) {
-        throw new Error(ERROR_CODES.CYCLIC_WORKFLOW_DETECTED)
-      }
-      this.initialized = true
+  private _initialize(): void {
+    if (this.initialized) return
+    if (hasCycle(this.workflowDef)) {
+      throw new Error(ERROR_CODES.CYCLIC_WORKFLOW_DETECTED)
     }
-    return this.initialized
+    this.initialized = true
   }
 
   public async clock(): Promise<ClockResult> {
-    this.initialize()
+    this._initialize()
 
     const rt = this.workflowDef.runtime
 
-    // If we've already finished, we're done.
     if (rt.finished) {
       return { status: 'error', code: ERROR_CODES.WORKFLOW_IS_ALREADY_EXECUTED }
     }
 
-    // No more queued nodes? Then this call finalizes the workflow.
     if (rt.queue.length === 0) {
-      rt.current = null
-      rt.finished = true
+      this._finalizeIfPossible()
       return { status: 'finished' }
     }
 
-    // 1. Dequeue next node id
+    const { nodeId: currentNodeId, node: currentNode } = this._dequeueAndMark()
+
+    const execResult = await this._runNode(currentNode)
+
+    const terminated = this._applyExecResultToNode(currentNode, execResult)
+    if (terminated) {
+      return {
+        status: 'ok',
+        node: currentNode,
+        exec: execResult,
+      }
+    }
+
+    this._scheduleChildren(currentNodeId, execResult)
+
+    return {
+      status: 'ok',
+      node: currentNode,
+      exec: execResult,
+    }
+  }
+
+  private _dequeueAndMark(): { nodeId: string; node: NodeDefType } {
+    const rt = this.workflowDef.runtime
+
     const currentNodeId = rt.queue.shift()!
     rt.current = currentNodeId
 
-    // 2. Mark visited if first time
     if (!rt.visited.includes(currentNodeId)) {
       rt.visited.push(currentNodeId)
     }
 
-    // Look up the node definition
-    const nodeObj = this.nodeById.get(currentNodeId)
-    if (!nodeObj) {
-      // This shouldn't happen unless workflowDef is corrupted.
-      // We treat it as fatal.
+    const currentNode = this.nodeById.get(currentNodeId)
+    if (!currentNode) {
       throw new Error(`Node ${currentNodeId} not found in nodeById`)
     }
 
-    // 3. Execute the node
-    //    NodeFactory.make(...) should build a runnable instance for this node.
-    const executable = this.nodeFactory.make(nodeObj)
-    const result = await executable.execute()
+    return { nodeId: currentNodeId, node: currentNode }
+  }
 
-    // You *could* store result somewhere here:
-    // nodeObj.data = result;   // <-- careful: mutating definition might not be what you want long-term
-    // For now we'll just return it to caller.
+  private async _runNode(node: NodeDefType): Promise<ExecutionResult> {
+    const executable = this.nodeFactory.make(node)
+    const execResult = await executable.execute()
+    return execResult
+  }
 
-    // 4. After success: enqueue children (breadth-first expansion)
-    const neighbors = this.outgoing.get(currentNodeId) ?? []
-    for (const nextId of neighbors) {
+  private _applyExecResultToNode(node: NodeDefType, execResult: ExecutionResult): boolean {
+    if (execResult.status === 'ok' && execResult.payload) {
+      const { outputs } = execResult.payload
+      node.executed = true
+      node.outputs = outputs
+    } else if (execResult.status === 'error') {
+      node.executed = true
+      node.outputs = node.outputs ?? []
+    }
+
+    this.nodeById.set(node.id, node)
+
+    if (execResult.terminateRun === true) {
+      const rt = this.workflowDef.runtime
+      rt.queue = []
+      rt.current = null
+      rt.finished = true
+      return true
+    }
+
+    return false
+  }
+
+  private _scheduleChildren(parentNodeId: string, execResult: ExecutionResult): void {
+    const rt = this.workflowDef.runtime
+
+    const neighbors = this.outgoing.get(parentNodeId) ?? []
+    let allowedNextIds: string[] = []
+
+    if (execResult.status === 'error') {
+      allowedNextIds = []
+    } else if (execResult.next && execResult.next.length > 0) {
+      const neighborSet = new Set(neighbors)
+      allowedNextIds = execResult.next.filter((n) => neighborSet.has(n))
+    } else {
+      allowedNextIds = neighbors
+    }
+
+    for (const nextId of allowedNextIds) {
+      const childNode = this.nodeById.get(nextId)
+      if (!childNode) {
+        throw new Error(`Child node ${nextId} not found in nodeById`)
+      }
+
+      const parentNode = this.nodeById.get(parentNodeId)
+      if (!parentNode) {
+        throw new Error(`Parent node ${parentNodeId} not found in nodeById`)
+      }
+
+      const updatedChild = this._wireOutputsToChild(parentNode, childNode)
+      this.nodeById.set(updatedChild.id, updatedChild)
+
       const alreadyVisited = rt.visited.includes(nextId)
       const alreadyQueued = rt.queue.includes(nextId)
 
@@ -114,15 +175,35 @@ export class Workflow {
       }
     }
 
-    // 5. If queue is now empty after this, we don't immediately flip finished.
-    //    We'll let the *next* clock() call mark finished and return {status:'finished'}.
-    //    This matches the step-by-step semantics you described.
-
-    return {
-      status: 'ok',
-      node: nodeObj,
-      result,
+    if (rt.queue.length === 0) {
+      this._finalizeIfPossible()
     }
+  }
+
+  private _finalizeIfPossible(): void {
+    const rt = this.workflowDef.runtime
+    if (rt.queue.length === 0) {
+      rt.current = null
+      rt.finished = true
+    }
+  }
+
+  private _wireOutputsToChild(parentNode: NodeDefType, childNode: NodeDefType): NodeDefType {
+    if (!parentNode.executed) {
+      return childNode
+    }
+
+    const parentOutputs = parentNode.outputs ?? []
+    const existingInputs = childNode.inputs ?? []
+
+    const mergedInputs = [...existingInputs]
+
+    for (const out of parentOutputs) {
+      mergedInputs.push(out as any)
+    }
+
+    childNode.inputs = mergedInputs
+    return childNode
   }
 
   public getCurrentNode(): NodeDefType | null {
@@ -136,7 +217,15 @@ export class Workflow {
   }
 
   public serialize(): WorkflowDef {
-    return this.workflowDef
+    const updatedNodes = this.workflowDef.nodes.map((origNode) => {
+      const liveNode = this.nodeById.get(origNode.id)
+      return liveNode ?? origNode
+    })
+
+    return {
+      ...this.workflowDef,
+      nodes: updatedNodes,
+    }
   }
 
   public isFinished(): boolean {

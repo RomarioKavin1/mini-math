@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { NodeDef, NodeDefType, EdgeDef } from '@mini-math/nodes'
+import { NodeDef, NodeDefType, EdgeDef, ExecutionResult } from '@mini-math/nodes'
 import { RuntimeStateSchema } from '@mini-math/runtime'
 import { WORKFLOW_CONSTANTS } from '@mini-math/utils'
 
@@ -31,10 +31,19 @@ export const WorkflowSchema = z.object({
 
 export type WorkflowDef = z.infer<typeof WorkflowSchema>
 
-export type ClockStatus = 'ok' | 'finished' | 'error'
-export interface ClockResult {
-  status: ClockStatus
-  node?: NodeDefType
-  result?: unknown
-  code?: string
+export interface ClockOk {
+  status: 'ok'
+  node: NodeDefType
+  exec: ExecutionResult
 }
+
+export interface ClockFinished {
+  status: 'finished'
+}
+
+export interface ClockError {
+  status: 'error'
+  code: string
+}
+
+export type ClockResult = ClockOk | ClockFinished | ClockError
