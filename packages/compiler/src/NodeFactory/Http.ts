@@ -4,7 +4,7 @@ export class HttpNode extends BaseNode {
   protected async _nodeExecutionLogic(): Promise<OutputType[]> {
     throw new Error('method not implemented')
   }
-  async cost(): Promise<BigInt> {
+  protected async _cost(): Promise<bigint> {
     return BigInt(7)
   }
 }

@@ -31,7 +31,7 @@ export class PrinterNode extends BaseNode {
     return [{ id: all_id, name: all_names, type: 'string', value: all_type }]
   }
 
-  async cost(): Promise<BigInt> {
+  protected async _cost(): Promise<bigint> {
     return BigInt(0)
   }
 }
