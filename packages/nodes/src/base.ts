@@ -8,10 +8,6 @@ import {
 
 import { ERROR_CODES } from './errors.js'
 
-export interface NodeFactoryType {
-  make(node: NodeDefType): ExecutableNodeBase
-}
-
 export abstract class BaseNode implements ExecutableNodeBase {
   protected nodeDef: NodeDefType
   constructor(nodeDef: NodeDefType) {

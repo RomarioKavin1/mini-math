@@ -1,12 +1,13 @@
-import { ERROR_CODES, NodeDefType, NodeFactoryType, ExecutionResult } from '@mini-math/nodes'
-import { makeLogger } from '@mini-math/logger'
+import { ERROR_CODES, NodeDefType, ExecutionResult } from '@mini-math/nodes'
+import { Logger, makeLogger } from '@mini-math/logger'
 import { RuntimeDef } from '@mini-math/runtime'
+import { NodeFactoryType } from '@mini-math/compiler'
 
 import { ClockResult, WorkflowDef } from './types.js'
 import { bfsTraverse, hasCycle, deepClone } from './helper.js'
 
-const logger = makeLogger('Workflow')
 export class Workflow {
+  private readonly logger: Logger
   private nodeById: Map<string, NodeDefType> = new Map()
   private outgoing: Map<string, string[]> = new Map()
   private runtime: RuntimeDef
@@ -17,7 +18,8 @@ export class Workflow {
     private nodeFactory: NodeFactoryType,
     runtimeDef?: RuntimeDef,
   ) {
-    logger.trace(`started to create workflow. ID: ${this.workflowDef.id}`)
+    this.logger = makeLogger(`Workflow ID: ${this.workflowDef.id}`)
+    this.logger.trace(`started to create workflow. ID: ${this.workflowDef.id}`)
     if (!runtimeDef) {
       this.runtime = {
         queue: [],
@@ -38,7 +40,7 @@ export class Workflow {
   }
 
   private _validateDefinition(wf: WorkflowDef): void {
-    logger.trace(`start valiadate for workflow. ID: ${this.workflowDef.id}`)
+    this.logger.trace(`start valiadate for workflow. ID: ${this.workflowDef.id}`)
     if (!wf) throw new Error('Workflow definition is required')
     if (!Array.isArray(wf.nodes) || wf.nodes.length === 0) {
       throw new Error('Workflow must have at least one node')
@@ -89,7 +91,7 @@ export class Workflow {
   }
 
   private _buildIndexes(): void {
-    logger.trace(`start building indexes for workflow. ID: ${this.workflowDef.id}`)
+    this.logger.trace(`start building indexes for workflow. ID: ${this.workflowDef.id}`)
     this.nodeById = new Map(this.workflowDef.nodes.map((n) => [n.id, n]))
 
     this.outgoing = new Map<string, string[]>()
@@ -103,7 +105,7 @@ export class Workflow {
   }
 
   private _bootstrapRuntime(): void {
-    logger.trace(`start bootstraping runtime for workflow. ID: ${this.workflowDef.id}`)
+    this.logger.trace(`start bootstraping runtime for workflow. ID: ${this.workflowDef.id}`)
 
     const rt = this.runtime
     if (rt.queue.length === 0 && rt.visited.length === 0 && !rt.finished) {
@@ -118,13 +120,13 @@ export class Workflow {
 
   private _initialize(): void {
     if (this.initialized) {
-      logger.trace(
+      this.logger.trace(
         `workflow. ID: ${this.workflowDef.id} is already initialized. Skipping initialization`,
       )
       return
     }
 
-    logger.trace(`start initializing workflow. ID: ${this.workflowDef.id}`)
+    this.logger.trace(`start initializing workflow. ID: ${this.workflowDef.id}`)
     if (hasCycle(this.workflowDef)) {
       throw new Error(ERROR_CODES.CYCLIC_WORKFLOW_DETECTED)
     }
@@ -132,7 +134,7 @@ export class Workflow {
   }
 
   public async clock(): Promise<ClockResult> {
-    logger.trace(`Clocking workflow. ID: ${this.workflowDef.id}`)
+    this.logger.trace(`Clocking workflow. ID: ${this.workflowDef.id}`)
     this._initialize()
 
     const rt = this.runtime
@@ -311,8 +313,16 @@ export class Workflow {
 
   public isFinished(): boolean {
     const rt = this.runtime
-    logger.trace(`Workflow ID: ${this.workflowDef.id} rt.finished=${rt.finished}`)
-    logger.trace(`Workflow ID: ${this.workflowDef.id} rt.queue.length=${rt.queue.length}`)
+    this.logger.trace(`Workflow ID: ${this.workflowDef.id} rt.finished=${rt.finished}`)
+    this.logger.trace(`Workflow ID: ${this.workflowDef.id} rt.queue.length=${rt.queue.length}`)
     return rt.finished === true || rt.queue.length === 0
   }
+}
+
+export type WorkflowResult = { status: boolean; message: string; workflow: WorkflowDef | null }
+
+export abstract class WorkflowStore {
+  public abstract get(workflowId: string, initial?: Partial<WorkflowDef>): Promise<WorkflowResult>
+
+  public abstract update(workflowId: string, patch: Partial<WorkflowDef>): Promise<WorkflowResult>
 }

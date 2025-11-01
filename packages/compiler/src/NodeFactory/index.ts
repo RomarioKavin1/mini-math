@@ -1,4 +1,4 @@
-import { ExecutableNodeBase, NodeDefType, NodeFactoryType, NodeType } from '@mini-math/nodes'
+import { ExecutableNodeBase, NodeDefType, NodeType } from '@mini-math/nodes'
 import { IfElseNode } from './IfElse.js'
 import { TriggerNode } from './Trigger.js'
 import { WalletNode } from './Wallet.js'
@@ -16,6 +16,9 @@ import { CdpWalletNode } from './CdpWallet.js'
 import { CdpTransactionNode } from './CdpTransaction.js'
 import { TransferFundsNode } from './TransferFunds.js'
 
+export interface NodeFactoryType {
+  make(node: NodeDefType): ExecutableNodeBase
+}
 export class NodeFactory implements NodeFactoryType {
   make(node: NodeDefType): ExecutableNodeBase {
     if (node.type == NodeType.ifElse) {

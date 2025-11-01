@@ -2,12 +2,14 @@ import { z } from 'zod'
 
 export const EdgeRef = z.string().min(16)
 
-export const EdgeDef = z.object({
-  id: EdgeRef,
-  from: z.string(),
-  to: z.string(),
-  condition: z.string().optional(), // expression string
-})
+export const EdgeDef = z
+  .object({
+    id: EdgeRef,
+    from: z.string(),
+    to: z.string(),
+    condition: z.string().optional(), // expression string
+  })
+  .openapi('Edge')
 
 export type EdgeDefType = z.infer<typeof EdgeDef>
 

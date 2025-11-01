@@ -23,17 +23,19 @@ export enum NodeType {
   transferFunds = 'transferFunds',
 }
 
-export const NodeDef = z.object({
-  id: NodeRef,
-  type: z.enum(NodeType),
-  name: z.string().optional(),
-  config: z.unknown().optional(),
-  data: z.unknown().optional(),
-  inputs: z.array(Input).default([]),
-  outputs: z.array(Output).default([]),
-  executed: z.boolean().default(false),
-  code: z.string().optional(),
-})
+export const NodeDef = z
+  .object({
+    id: NodeRef,
+    type: z.enum(NodeType),
+    name: z.string().optional(),
+    config: z.unknown().optional(),
+    data: z.unknown().optional(),
+    inputs: z.array(Input).default([]),
+    outputs: z.array(Output).default([]),
+    executed: z.boolean().default(false),
+    code: z.string().optional(),
+  })
+  .openapi('Node')
 
 export type NodeDefType = z.infer<typeof NodeDef>
 

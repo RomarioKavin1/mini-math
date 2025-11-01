@@ -1,10 +1,5 @@
-import {
-  BaseNode,
-  ExecutableNodeBase,
-  NodeDefType,
-  NodeFactoryType,
-  OutputType,
-} from '@mini-math/nodes'
+import { BaseNode, ExecutableNodeBase, NodeDefType, OutputType } from '@mini-math/nodes'
+import { NodeFactoryType } from './NodeFactory/index.js'
 
 export class PrinterNode extends BaseNode {
   protected async _nodeExecutionLogic(): Promise<OutputType[]> {

@@ -3,17 +3,19 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 import { EdgeDef, Input, NodeRef, NodeType, Output } from '@mini-math/nodes'
 extendZodWithOpenApi(z)
 
-const NodeDef = z.object({
-  id: NodeRef,
-  type: z.enum(NodeType),
-  name: z.string(),
-  config: z.unknown().default({}),
-  data: z.unknown().optional(),
-  inputs: z.array(Input).default([]),
-  outputs: z.array(Output).default([]),
-  executed: z.boolean().default(false),
-  code: z.string().optional(),
-})
+const NodeDef = z
+  .object({
+    id: NodeRef,
+    type: z.enum(NodeType),
+    name: z.string(),
+    config: z.unknown().default({}),
+    data: z.unknown().optional(),
+    inputs: z.array(Input).default([]),
+    outputs: z.array(Output).default([]),
+    executed: z.boolean().default(false),
+    code: z.string().optional(),
+  })
+  .openapi('MockNode')
 
 export const MockWorkflowSchema = z
   .object({

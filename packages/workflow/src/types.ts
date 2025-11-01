@@ -5,17 +5,19 @@ extendZodWithOpenApi(z)
 
 export const WorkflowRef = z.string().min(16)
 
-export const WorkflowSchema = z
+export const WorkflowCore = z
   .object({
-    id: WorkflowRef,
     name: z.string().optional(),
     version: z.string(),
     nodes: z.array(NodeDef).min(1),
     edges: z.array(EdgeDef),
-    entry: z.string(), // start node
+    entry: z.string(),
   })
-  .openapi('Workflow')
+  .openapi('WorkflowCore')
 
+export type WorkflowCoreDef = z.infer<typeof WorkflowCore>
+
+export const WorkflowSchema = WorkflowCore.extend({ id: WorkflowRef }).openapi('Workflow')
 export type WorkflowDef = z.infer<typeof WorkflowSchema>
 
 export interface ClockOk {
