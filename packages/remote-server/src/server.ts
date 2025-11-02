@@ -120,6 +120,7 @@ export class Server {
       this.logger.trace(JSON.stringify([wf]))
       this.logger.trace(JSON.stringify([rt]))
 
+      await this.workflowStore.update(workflow.id(), wf)
       await this.runtimeStore.update(workflow.id(), rt)
       workflow = new Workflow(wf, this.nodeFactory, rt)
     }

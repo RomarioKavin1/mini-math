@@ -1,0 +1,45 @@
+{
+  "name": "@mini-math/remote-worker",
+  "public": true,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:js": "tsup src/index.ts --format esm,cjs",
+    "build": "npm run clean && npm run build:types && npm run build:js",
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@mini-math/compiler": "^0.1.0",
+    "@mini-math/logger": "^0.1.0",
+    "@mini-math/queue": "^0.1.0",
+    "@mini-math/runtime": "^0.1.0",
+    "@mini-math/utils": "^0.1.0",
+    "@mini-math/workflow": "^0.1.0",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@types/uuid": "^10.0.0",
+    "ts-node": "^10.9.2"
+  }
+}
