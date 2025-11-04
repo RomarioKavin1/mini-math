@@ -96,6 +96,13 @@ export class Server {
       revertIfNoRuntime(this.runtimeStore),
       this.handleInitiateWorkflow,
     )
+    this.app.post(
+      '/fetch',
+      validateBody(ID),
+      revertIfNoWorkflow(this.workflowStore),
+      revertIfNoRuntime(this.runtimeStore),
+      this.handleFetchWorkflowResult,
+    )
   }
 
   // Handlers as arrow functions to preserve `this`
@@ -189,5 +196,17 @@ export class Server {
 
     this.queue.enqueue([wfDef, rtDef])
     return res.json({ success: true })
+  }
+
+  private handleFetchWorkflowResult = async (req: Request, res: Response) => {
+    const wfDef = req.workflow as WorkflowDef // TODO: enfore this by types
+    const rtDef = req.runtime as RuntimeDef // TODO: enfore this by types
+
+    const workflow = new Workflow(wfDef, this.nodeFactory, rtDef)
+    if (!workflow.isFinished()) {
+      return res.status(206).json(wfDef)
+    } else {
+      return res.status(200).json(wfDef)
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { ERROR_CODES, NodeDefType, ExecutionResult } from '@mini-math/nodes'
+import { ERROR_CODES, NodeDefType, ExecutionResult, WorkflowGlobalState } from '@mini-math/nodes'
 import { Logger, makeLogger } from '@mini-math/logger'
 import { RuntimeDef } from '@mini-math/runtime'
 import { NodeFactoryType } from '@mini-math/compiler'
@@ -6,7 +6,7 @@ import { NodeFactoryType } from '@mini-math/compiler'
 import { ClockResult, WorkflowDef } from './types.js'
 import { bfsTraverse, hasCycle, deepClone } from './helper.js'
 
-export class Workflow {
+export class Workflow implements WorkflowGlobalState {
   private readonly logger: Logger
   private nodeById: Map<string, NodeDefType> = new Map()
   private outgoing: Map<string, string[]> = new Map()
@@ -33,6 +33,37 @@ export class Workflow {
     this._validateDefinition(this.workflowDef)
     this._buildIndexes()
     this._bootstrapRuntime()
+  }
+
+  public getGlobalState<T = unknown>(): T | undefined {
+    return this.workflowDef.globalState === undefined
+      ? undefined
+      : (deepClone(this.workflowDef.globalState) as T)
+  }
+
+  public setGlobalState<T>(value: T): void {
+    this.workflowDef.globalState = deepClone(value) as unknown
+  }
+
+  public updateGlobalState<T = unknown>(updater: (prev: Readonly<T | undefined>) => T): void {
+    const prev = this.workflowDef.globalState as T | undefined
+    const next = updater(deepClone(prev) as Readonly<T | undefined>)
+    this.workflowDef.globalState = deepClone(next) as unknown
+  }
+
+  public updatePartialState<P extends Record<string, unknown>>(
+    patch: Readonly<P>,
+    opts?: { deep?: boolean },
+  ): void {
+    const prev = (this.workflowDef.globalState ?? {}) as Record<string, unknown> | unknown
+
+    if (!Workflow.isPlainObject(prev)) {
+      throw new Error('globalState is not an object; cannot apply partial update')
+    }
+
+    const next = opts?.deep ? Workflow.deepMerge(prev, patch) : { ...prev, ...patch }
+
+    this.workflowDef.globalState = deepClone(next) as unknown
   }
 
   public id(): string {
@@ -189,7 +220,7 @@ export class Workflow {
   }
 
   private async _runNode(node: NodeDefType): Promise<ExecutionResult> {
-    const executable = this.nodeFactory.make(node)
+    const executable = this.nodeFactory.make(node, this)
     const execResult = await executable.execute()
     return execResult
   }
@@ -316,5 +347,25 @@ export class Workflow {
     this.logger.trace(`Workflow ID: ${this.workflowDef.id} rt.finished=${rt.finished}`)
     this.logger.trace(`Workflow ID: ${this.workflowDef.id} rt.queue.length=${rt.queue.length}`)
     return rt.finished === true || rt.queue.length === 0
+  }
+
+  private static isPlainObject(x: unknown): x is Record<string, unknown> {
+    return typeof x === 'object' && x !== null && Object.getPrototypeOf(x) === Object.prototype
+  }
+
+  private static deepMerge<T extends Record<string, unknown>, U extends Record<string, unknown>>(
+    a: T,
+    b: U,
+  ): T & U {
+    const out: Record<string, unknown> = { ...a }
+    for (const [k, v] of Object.entries(b) as Array<[string, unknown]>) {
+      const av = out[k]
+      if (this.isPlainObject(av) && this.isPlainObject(v)) {
+        out[k] = this.deepMerge(av as Record<string, unknown>, v as Record<string, unknown>)
+      } else {
+        out[k] = deepClone(v)
+      }
+    }
+    return out as T & U
   }
 }

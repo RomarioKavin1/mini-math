@@ -1,4 +1,10 @@
-import { BaseNode, ExecutableNodeBase, NodeDefType, OutputType } from '@mini-math/nodes'
+import {
+  BaseNode,
+  ExecutableNodeBase,
+  NodeDefType,
+  OutputType,
+  WorkflowGlobalState,
+} from '@mini-math/nodes'
 import { NodeFactoryType } from './NodeFactory/index.js'
 
 export class PrinterNode extends BaseNode {
@@ -32,7 +38,7 @@ export class PrinterNode extends BaseNode {
 }
 
 export class PrinterNodeFactory implements NodeFactoryType {
-  make(node: NodeDefType): ExecutableNodeBase {
-    return new PrinterNode(node)
+  make(node: NodeDefType, workflowGlobalStateRef: WorkflowGlobalState): ExecutableNodeBase {
+    return new PrinterNode(node, workflowGlobalStateRef)
   }
 }

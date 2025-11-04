@@ -1,4 +1,4 @@
-import { ExecutableNodeBase, NodeDefType, NodeType } from '@mini-math/nodes'
+import { ExecutableNodeBase, NodeDefType, NodeType, WorkflowGlobalState } from '@mini-math/nodes'
 import { IfElseNode } from './IfElse.js'
 import { TriggerNode } from './Trigger.js'
 import { WalletNode } from './Wallet.js'
@@ -17,42 +17,42 @@ import { CdpTransactionNode } from './CdpTransaction.js'
 import { TransferFundsNode } from './TransferFunds.js'
 
 export interface NodeFactoryType {
-  make(node: NodeDefType): ExecutableNodeBase
+  make(node: NodeDefType, workflowGlobalStateRef: WorkflowGlobalState): ExecutableNodeBase
 }
 export class NodeFactory implements NodeFactoryType {
-  make(node: NodeDefType): ExecutableNodeBase {
+  make(node: NodeDefType, workflowGlobalStateRef: WorkflowGlobalState): ExecutableNodeBase {
     if (node.type == NodeType.ifElse) {
-      return new IfElseNode(node)
+      return new IfElseNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.trigger) {
-      return new TriggerNode(node)
+      return new TriggerNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.wallet) {
-      return new WalletNode(node)
+      return new WalletNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.privateKey) {
-      return new PrivateKeyNode(node)
+      return new PrivateKeyNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.transaction) {
-      return new TransactionNode(node)
+      return new TransactionNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.http) {
-      return new HttpNode(node)
+      return new HttpNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.transform) {
-      return new TransformNode(node)
+      return new TransformNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.condition) {
-      return new ConditionNode(node)
+      return new ConditionNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.code) {
-      return new CodeNode(node)
+      return new CodeNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.variable) {
-      return new VariableNode(node)
+      return new VariableNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.smartContract) {
-      return new SmartContractNode(node)
+      return new SmartContractNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.cdpSmartContract) {
-      return new CdpSmartContract(node)
+      return new CdpSmartContract(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.contractRead) {
-      return new ContractRead(node)
+      return new ContractRead(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.cdpWallet) {
-      return new CdpWalletNode(node)
+      return new CdpWalletNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.cdpTransaction) {
-      return new CdpTransactionNode(node)
+      return new CdpTransactionNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.transferFunds) {
-      return new TransferFundsNode(node)
+      return new TransferFundsNode(node, workflowGlobalStateRef)
     }
     throw new Error('node.type not defined')
   }

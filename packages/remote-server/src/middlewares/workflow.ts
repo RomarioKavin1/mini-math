@@ -14,10 +14,6 @@ declare module 'express-serve-static-core' {
   }
 }
 
-// If you want strong typing on res.locals, use the generics form below.
-// Locals carries the created WorkflowDef for downstream handlers.
-type L = { workflowDef?: WorkflowDef }
-
 export function revertIfNoWorkflow(workflowStore: WorkflowStore): RequestHandler {
   return async (req, res, next) => {
     const wfId = req.workflowId ?? (req.body?.id as string | undefined)
@@ -40,9 +36,7 @@ export function revertIfNoWorkflow(workflowStore: WorkflowStore): RequestHandler
   }
 }
 
-export function createNewWorkflow(
-  workflowStore: WorkflowStore,
-): RequestHandler<any, any, any, any, L> {
+export function createNewWorkflow(workflowStore: WorkflowStore): RequestHandler {
   return async (req, res, next) => {
     // Accept an id from prior middleware (req.workflowId or res.locals.id) or from body
     const wfId = req.workflowId ?? res.locals?.id ?? (req.body?.id as string | undefined)

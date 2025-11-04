@@ -9,8 +9,9 @@ export const StandardResponse = z
   .object({
     success: z.literal(false),
     message: z.string().optional(),
-    error: z.string().optional(),
+    error: z.any().optional(),
     data: z.any().optional(),
+    issues: z.any().optional(),
   })
   .openapi('StandardResponse')
 
@@ -87,7 +88,10 @@ registry.registerPath({
       description: 'Compiles the workflow',
       content: { 'application/json': { schema: StandardResponse } },
     },
-    400: { description: 'Bad Workflow' },
+    400: {
+      description: 'Bad Workflow',
+      content: { 'application/json': { schema: StandardResponse } },
+    },
   },
 })
 
@@ -109,12 +113,19 @@ registry.registerPath({
       description: 'Workflow is valid',
       content: { 'application/json': { schema: WorkflowSchema } },
     },
-    400: { description: 'Validation error' },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: StandardResponse } },
+    },
+    404: {
+      description: 'Resources not found',
+      content: { 'application/json': { schema: StandardResponse } },
+    },
     409: {
       description: 'Workflow is already run',
       content: { 'application/json': { schema: StandardResponse } },
     },
-    501: {
+    500: {
       description: 'Internal Server Error',
       content: { 'application/json': { schema: StandardResponse } },
     },
@@ -139,7 +150,15 @@ registry.registerPath({
       content: { 'application/json': { schema: WorkflowSchema } },
     },
     400: {
-      description: 'error',
+      description: 'Bad request',
+      content: { 'application/json': { schema: StandardResponse } },
+    },
+    404: {
+      description: 'Workflow is not found',
+      content: { 'application/json': { schema: StandardResponse } },
+    },
+    409: {
+      description: 'Workflow is already fullfilled',
       content: { 'application/json': { schema: StandardResponse } },
     },
   },
@@ -165,6 +184,30 @@ registry.registerPath({
     400: {
       description: 'error',
       content: { 'application/json': { schema: StandardResponse } },
+    },
+  },
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/fetch',
+  tags: [PROD_READY],
+  summary: 'Fetch the state of workflow',
+  request: {
+    body: {
+      content: {
+        'application/json': { schema: ID },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Returns workflow status when finished',
+      content: { 'application/json': { schema: WorkflowSchema } },
+    },
+    206: {
+      description: 'Returns result of partial workflow',
+      content: { 'application/json': { schema: WorkflowSchema } },
     },
   },
 })

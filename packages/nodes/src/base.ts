@@ -4,14 +4,18 @@ import {
   NodeDefType,
   OutputType,
   InputType,
+  WorkflowGlobalState,
 } from './types/index.js'
 
 import { ERROR_CODES } from './errors.js'
 
 export abstract class BaseNode implements ExecutableNodeBase {
   protected nodeDef: NodeDefType
-  constructor(nodeDef: NodeDefType) {
+  protected workflowGlobalState: WorkflowGlobalState
+
+  constructor(nodeDef: NodeDefType, workflowGlobalState: WorkflowGlobalState) {
     this.nodeDef = nodeDef
+    this.workflowGlobalState = workflowGlobalState
   }
 
   public readInputs(): InputType[] {

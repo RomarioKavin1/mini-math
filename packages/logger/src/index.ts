@@ -25,8 +25,20 @@ const root = pino({
 })
 
 function wrap(instance: pino.Logger): Logger {
-  const call = (lvl: Level, msg: string, meta?: Record<string, unknown>) =>
-    (instance as any)[lvl](meta ?? {}, msg)
+  type PinoCall = (meta: Record<string, unknown>, msg: string) => void
+
+  const fns: Record<Level, PinoCall> = {
+    fatal: (meta, msg) => instance.fatal(meta, msg),
+    error: (meta, msg) => instance.error(meta, msg),
+    warn: (meta, msg) => instance.warn(meta, msg),
+    info: (meta, msg) => instance.info(meta, msg),
+    debug: (meta, msg) => instance.debug(meta, msg),
+    trace: (meta, msg) => instance.trace(meta, msg),
+  }
+
+  const call = (lvl: Level, msg: string, meta?: Record<string, unknown>) => {
+    fns[lvl](meta ?? {}, msg)
+  }
 
   return {
     child: (bindings) => wrap(instance.child(bindings ?? {})),

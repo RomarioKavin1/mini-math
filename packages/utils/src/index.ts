@@ -9,7 +9,6 @@ export const WORKFLOW_CONSTANTS = {
 export const deepClone = <T>(x: T): T => {
   // Use native deep clone when available
   try {
-    // @ts-ignore - Node/TS may not have the type yet
     if (typeof structuredClone === 'function') return structuredClone(x)
   } catch {}
   // Fallback for plain data (works for your JSON-shaped defs)

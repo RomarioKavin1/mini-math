@@ -12,6 +12,7 @@ export const WorkflowCore = z
     nodes: z.array(NodeDef).min(1),
     edges: z.array(EdgeDef),
     entry: z.string(),
+    globalState: z.unknown().optional(),
   })
   .openapi('WorkflowCore')
 
