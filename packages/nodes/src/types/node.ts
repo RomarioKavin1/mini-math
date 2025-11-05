@@ -21,8 +21,10 @@ export enum NodeType {
   cdpWallet = 'cdpWallet',
   cdpTransaction = 'cdpTransaction',
   transferFunds = 'transferFunds',
+  test = 'test',
 }
 
+export const ExecutionTimestamp = z.number().int().nonnegative().brand<'UnixEpochMs'>()
 export const NodeDef = z
   .object({
     id: NodeRef,
@@ -33,6 +35,7 @@ export const NodeDef = z
     inputs: z.array(Input).default([]),
     outputs: z.array(Output).default([]),
     executed: z.boolean().default(false),
+    executionTimestamp: ExecutionTimestamp.optional(),
     code: z.string().optional(),
   })
   .openapi('Node')

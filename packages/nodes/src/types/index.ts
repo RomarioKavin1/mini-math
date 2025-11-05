@@ -14,6 +14,7 @@ export interface ExecutionResult {
     nodeId: string
     outputs: OutputType[] // what this node produced
     errorCode?: string // if status === 'error'
+    errorData?: unknown // if status == 'error
   }
 }
 

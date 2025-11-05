@@ -14,7 +14,7 @@ export interface Logger {
 const isProd = process.env.NODE_ENV === 'production'
 
 const root = pino({
-  level: process.env.LOG_LEVEL ?? 'debug',
+  level: process.env.LOG_LEVEL ?? 'trace',
   base: null,
   transport: isProd
     ? undefined

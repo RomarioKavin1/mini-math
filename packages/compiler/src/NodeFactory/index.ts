@@ -15,6 +15,7 @@ import { ContractRead } from './ContractRead.js'
 import { CdpWalletNode } from './CdpWallet.js'
 import { CdpTransactionNode } from './CdpTransaction.js'
 import { TransferFundsNode } from './TransferFunds.js'
+import { TestNode } from './Test.js'
 
 export interface NodeFactoryType {
   make(node: NodeDefType, workflowGlobalStateRef: WorkflowGlobalState): ExecutableNodeBase
@@ -53,6 +54,8 @@ export class NodeFactory implements NodeFactoryType {
       return new CdpTransactionNode(node, workflowGlobalStateRef)
     } else if (node.type == NodeType.transferFunds) {
       return new TransferFundsNode(node, workflowGlobalStateRef)
+    } else if (node.type == NodeType.test) {
+      return new TestNode(node, workflowGlobalStateRef)
     }
     throw new Error('node.type not defined')
   }

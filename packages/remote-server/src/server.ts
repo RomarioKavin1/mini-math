@@ -69,6 +69,7 @@ export class Server {
     this.app.post(
       '/run',
       validateBody(WorkflowSchema),
+      createNewWorkflow(this.workflowStore),
       createNewRuntime(this.runtimeStore),
       this.handleRun,
     )
@@ -124,8 +125,23 @@ export class Server {
       this.logger.trace(JSON.stringify(info))
 
       const [wf, rt] = workflow.serialize()
-      this.logger.trace(JSON.stringify([wf]))
-      this.logger.trace(JSON.stringify([rt]))
+      this.logger.trace(JSON.stringify(wf))
+      this.logger.trace(JSON.stringify(rt))
+
+      if (info.status == 'error') {
+        return res.status(400).json({
+          status: info.status,
+          error: info.code,
+          data: { workflow: wf, runtime: rt },
+        })
+      }
+
+      if (info.status == 'terminated') {
+        return res.status(410).json({
+          status: info.status,
+          data: { workflow: wf, runtime: rt, node: info.node, exec: info.exec },
+        })
+      }
 
       await this.workflowStore.update(workflow.id(), wf)
       await this.runtimeStore.update(workflow.id(), rt)
@@ -134,7 +150,9 @@ export class Server {
 
     this.logger.trace(`Workflow finished: ${workflow.id()}`)
     const [wf] = workflow.serialize()
-    return res.json({ success: true, data: wf })
+    this.workflowStore.delete(workflow.id())
+    this.runtimeStore.delete(workflow.id())
+    return res.json(wf)
   }
 
   private handleValidate = async (req: Request, res: Response) => {
@@ -175,12 +193,27 @@ export class Server {
         .json({ success: false, message: `Workflow ID: ${workflow.id()} already fullfilled` })
     }
 
-    await workflow.clock()
     const [_wfDef, _rtDef] = workflow.serialize()
     this.workflowStore.update(workflow.id(), _wfDef)
     this.runtimeStore.update(workflow.id(), _rtDef)
 
-    return res.json([_wfDef, _rtDef])
+    const info = await workflow.clock()
+    if (info.status == 'error') {
+      return res.status(400).json({
+        status: info.status,
+        error: info.code,
+        data: { workflow: _wfDef, runtime: _rtDef },
+      })
+    }
+
+    if (info.status == 'terminated') {
+      return res.status(410).json({
+        status: info.status,
+        data: { workflow: _wfDef, runtime: _rtDef, node: info.node, exec: info.exec },
+      })
+    }
+
+    return res.json(_wfDef)
   }
 
   private handleInitiateWorkflow = async (req: Request, res: Response) => {

@@ -1,4 +1,10 @@
-import { ERROR_CODES, NodeDefType, ExecutionResult, WorkflowGlobalState } from '@mini-math/nodes'
+import {
+  ERROR_CODES,
+  NodeDefType,
+  ExecutionResult,
+  WorkflowGlobalState,
+  ExecutionTimestamp,
+} from '@mini-math/nodes'
 import { Logger, makeLogger } from '@mini-math/logger'
 import { RuntimeDef } from '@mini-math/runtime'
 import { NodeFactoryType } from '@mini-math/compiler'
@@ -181,12 +187,14 @@ export class Workflow implements WorkflowGlobalState {
 
     const { nodeId: currentNodeId, node: currentNode } = this._dequeueAndMark()
 
-    const execResult = await this._runNode(currentNode)
+    const execResult = await this._safeRunNode(currentNode)
+    this.logger.trace(`execResult: ${JSON.stringify(execResult)}`)
 
     const terminated = this._applyExecResultToNode(currentNode, execResult)
+    this.logger.trace(`workflow terminated: ${terminated}`)
     if (terminated) {
       return {
-        status: 'ok',
+        status: 'terminated',
         node: currentNode,
         exec: execResult,
       }
@@ -202,6 +210,7 @@ export class Workflow implements WorkflowGlobalState {
   }
 
   private _dequeueAndMark(): { nodeId: string; node: NodeDefType } {
+    this.logger.trace('_dequeueAndMark')
     const rt = this.runtime
 
     const currentNodeId = rt.queue.shift()!
@@ -229,9 +238,11 @@ export class Workflow implements WorkflowGlobalState {
     if (execResult.status === 'ok' && execResult.payload) {
       const { outputs } = execResult.payload
       node.executed = true
+      node.executionTimestamp = ExecutionTimestamp.parse(new Date().valueOf())
       node.outputs = outputs
     } else if (execResult.status === 'error') {
       node.executed = true
+      node.executionTimestamp = ExecutionTimestamp.parse(new Date().valueOf())
       node.outputs = node.outputs ?? []
     }
 
@@ -249,6 +260,7 @@ export class Workflow implements WorkflowGlobalState {
   }
 
   private _scheduleChildren(parentNodeId: string, execResult: ExecutionResult): void {
+    this.logger.trace('Scheduling children node execution')
     const rt = this.runtime
 
     const neighbors = this.outgoing.get(parentNodeId) ?? []
@@ -367,5 +379,29 @@ export class Workflow implements WorkflowGlobalState {
       }
     }
     return out as T & U
+  }
+
+  private async _safeRunNode(node: NodeDefType): Promise<ExecutionResult> {
+    try {
+      return await this._runNode(node)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      // TODO: Try to classify a common case: abstract method not implemented
+      const code = /not implemented/i.test(msg)
+        ? ERROR_CODES.NODE_METHOD_NOT_IMPLEMENTED
+        : ERROR_CODES.NODE_EXECUTION_FAILED
+
+      this.logger.error(`Node ${node.id} threw during execute(): ${msg}`)
+      return {
+        status: 'error',
+        terminateRun: true,
+        payload: {
+          nodeId: node.id,
+          outputs: [],
+          errorCode: code,
+          errorData: msg,
+        },
+      }
+    }
   }
 }

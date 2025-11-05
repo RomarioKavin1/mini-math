@@ -14,11 +14,9 @@ export class TriggerNode extends BaseNode {
   private readonly logger: Logger
   constructor(nodeDef: NodeDefType, workflowGlobalStateRef: WorkflowGlobalState) {
     super(nodeDef, workflowGlobalStateRef)
-
-    // TODO: figure out which is better from debugging perspective
-    // this.logger = makeLogger(this.nodeDef.id)
-    this.logger = makeLogger('TriggerNode')
+    this.logger = makeLogger(`TriggerNode: ${this.nodeDef.id}`)
   }
+
   protected async _nodeExecutionLogic(): Promise<OutputType[]> {
     const raw: unknown = this.nodeDef.data ?? this.nodeDef.config ?? {}
     const nodeConfig: TriggerConfig = TriggerConfigSchema.parse(raw)

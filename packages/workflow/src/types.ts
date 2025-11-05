@@ -36,4 +36,10 @@ export interface ClockError {
   code: string
 }
 
-export type ClockResult = ClockOk | ClockFinished | ClockError
+export interface ClockTerminated {
+  status: 'terminated'
+  node: NodeDefType
+  exec: ExecutionResult
+}
+
+export type ClockResult = ClockOk | ClockFinished | ClockError | ClockTerminated
