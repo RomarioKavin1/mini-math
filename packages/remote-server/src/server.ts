@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import express, { Request, Response } from 'express'
+import session from 'express-session'
+import helmet from 'helmet'
 import swaggerUi from 'swagger-ui-express'
 
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
@@ -23,8 +25,16 @@ import {
   createNewWorkflow,
   revertIfNoWorkflow,
   revertIfNoRuntime,
+  attachUserIfPresent,
+  getNonce,
+  requireAuth,
+  session_printer,
 } from './middlewares/index.js'
 import { IQueue } from '@mini-math/queue'
+import { logout, verifySiwe } from './auth.js'
+
+import { KeyValueSessionStore } from './keyvalue-session-store.js'
+import { KeyValueStore } from '@mini-math/keystore'
 
 extendZodWithOpenApi(z)
 
@@ -36,6 +46,7 @@ declare module 'express-serve-static-core' {
     runtime?: RuntimeDef
   }
 }
+
 export class Server {
   private readonly app = express()
   private readonly logger = makeLogger('RemoteServer')
@@ -45,24 +56,72 @@ export class Server {
     private runtimeStore: RuntimeStore,
     private nodeFactory: NodeFactoryType,
     private queue: IQueue<[WorkflowDef, RuntimeDef]>,
-    private readonly port: number | string = process.env.PORT || 3000,
+    private kvs: KeyValueStore,
+    private domainWithPort: string,
+    private readonly session_secret: string,
+    private readonly secure: boolean,
   ) {
     this.configureMiddleware()
     this.configureRoutes()
   }
 
   public async start(): Promise<void> {
+    const [host, portStr] = this.domainWithPort.split(':')
+    const port = Number(portStr ?? 3000)
+
     await new Promise<void>((resolve) => {
-      this.app.listen(this.port, () => resolve())
+      // this.app.listen(`${this.port}`, () => resolve())
+      this.app.listen(port, host, () => resolve())
     })
-    this.logger.info(
-      `API on http://localhost:${this.port}  |  Docs: http://localhost:${this.port}/docs`,
-    )
+    this.logger.info(`API on ${this.domainWithPort}  |  Docs: ${this.domainWithPort}/docs`)
   }
 
   private configureMiddleware(): void {
+    const store = new KeyValueSessionStore(this.kvs, {
+      prefix: 'sess:',
+      defaultTTLSeconds: 60 * 60 * 24,
+    })
+
+    this.app.use(session_printer)
     this.app.use(express.json())
-    this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc))
+    this.app.use(helmet())
+
+    this.app.use(
+      session({
+        name: 'sid',
+        secret: this.session_secret,
+        store,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: this.secure,
+          maxAge: 1000 * 60 * 60 * 24,
+        },
+      }),
+    )
+
+    this.app.use(attachUserIfPresent())
+
+    type SwaggerInterceptorReq = {
+      credentials?: 'include' | 'omit' | 'same-origin'
+    } & Record<string, unknown>
+
+    this.app.use(
+      '/docs',
+      swaggerUi.serve,
+      swaggerUi.setup(openapiDoc, {
+        swaggerOptions: {
+          // Ensure cookies are sent with "Try it out"
+          withCredentials: true,
+          requestInterceptor: (req: SwaggerInterceptorReq) => {
+            req.credentials = 'include'
+            return req
+          },
+        },
+      }),
+    )
   }
 
   private configureRoutes(): void {
@@ -104,6 +163,18 @@ export class Server {
       revertIfNoRuntime(this.runtimeStore),
       this.handleFetchWorkflowResult,
     )
+
+    this.app.get('/siwe/nonce', getNonce())
+    this.app.post('/siwe/verify', verifySiwe(this.domainWithPort))
+    this.app.post('/logout', logout())
+
+    this.app.get('/me', requireAuth(), (req, res) => {
+      if (req?.session?.user) {
+        return res.json({ user: req.session.user })
+      } else {
+        return res.status(404).json({ user: null })
+      }
+    })
   }
 
   // Handlers as arrow functions to preserve `this`
