@@ -110,17 +110,29 @@ export class RabbitMQQueue<T> implements IQueue<T> {
 
   onMessage(callback: (messageId: string, item: T) => Promise<void>): void {
     this.messageCallback = callback
-    if (this.channel) {
-      this.setupConsumer()
-    }
+
+    // Make sure we connect + register consumer
+    void (async () => {
+      try {
+        await this.ensureInitialized()
+        await this.setupConsumer()
+      } catch (err) {
+        this.logger.error('[RabbitMQ] Failed to initialize consumer:')
+        this.logger.error(JSON.stringify(err))
+      }
+    })()
   }
 
   private async setupConsumer(): Promise<void> {
     if (!this.channel || !this.messageCallback) return
 
-    // If there's an old consumer tag, we don't need to do anything.
-    // The 'close' event on the channel/connection should handle cleanup.
-    // When we reconnect, we'll get a new channel and set up a new consumer.
+    // ⬇️ New guard: don't register twice
+    if (this.consumerTag) {
+      this.logger.debug(
+        `[RabbitMQ] Consumer already registered for queue ${this.queueName} (${this.consumerTag}), skipping setupConsumer`,
+      )
+      return
+    }
 
     const consumerTag = `consumer_${this.queueName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 

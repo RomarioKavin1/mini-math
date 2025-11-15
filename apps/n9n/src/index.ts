@@ -1,58 +1,51 @@
-// src/main.ts
-import { NodeFactory } from '@mini-math/compiler'
-import { Server } from '@mini-math/remote-server'
-import { RuntimeDef } from '@mini-math/runtime'
-import { WorkflowDef } from '@mini-math/workflow'
-import { RemoteWorker } from '@mini-math/remote-worker'
-import {
-  RedisStore,
-  RabbitMQQueue,
-  PostgresWorkflowstore,
-  PostgresRuntimeStore,
-  PostgresRoleStore,
-} from '@mini-math/adapters'
+import { App } from './types.js'
 
-import { config } from 'dotenv'
-import { getRedisUrl } from './redis_cfg.js'
-import { getRabbitMqUrl } from './rabbitmq_cfg.js'
-import { getPostgresUrl } from './postgres_cfg.js'
-import { getInitPlatformOwner } from './platform_owner.js'
+import { Command } from 'commander'
 
-config()
+const program = new Command()
 
-const nodeFactory = new NodeFactory()
-const queue = new RabbitMQQueue<[WorkflowDef, RuntimeDef]>(getRabbitMqUrl(), 'workflow_queue')
-const workflowStore = new PostgresWorkflowstore(getPostgresUrl())
-const runtimeStore = new PostgresRuntimeStore(getPostgresUrl())
-const roleStore = new PostgresRoleStore(getPostgresUrl(), getInitPlatformOwner())
-const sessionStore = new RedisStore(getRedisUrl())
+const VALID_COMMANDS = new Set(['start-server', 'start-worker'])
 
-const worker1 = new RemoteWorker(queue, workflowStore, runtimeStore, nodeFactory, 'Simple Worker 1')
-worker1.start()
+program.name('app').description('Tiny CLI to manage server and worker').version('0.1.0')
 
-const worker2 = new RemoteWorker(queue, workflowStore, runtimeStore, nodeFactory, 'Simple Worker 2')
-worker2.start()
+// app start-server --domain foo.com
+program
+  .command('start-server')
+  .description('Start the HTTP server')
+  .requiredOption('--domain <domain>', 'Domain to bind')
+  .action(async (opts: { domain: string }) => {
+    const { domain } = opts
 
-const DOMAIN = 'localhost:3000'
+    // TODO: your real logic here
+    console.log(`Starting server on domain: ${domain}`)
 
-const server = new Server(
-  workflowStore,
-  runtimeStore,
-  nodeFactory,
-  roleStore,
-  queue,
-  sessionStore,
-  DOMAIN,
-  'super-long-session-secret',
-  false,
-)
+    await App.start_server(domain)
+  })
 
-await server.start()
+// app start-worker --name worker-1
+program
+  .command('start-worker')
+  .description('Start a background worker')
+  .requiredOption('--name <name>', 'Worker name')
+  .action(async (opts: { name: string }) => {
+    const { name } = opts
 
-// optional: basic graceful shutdown hooks
-const shutdown = (signal: string) => {
-  console.log(`\n${signal} received, exiting...`)
-  process.exit(0)
+    // TODO: your real logic here
+    console.log(`Starting worker with name: ${name}`)
+
+    await App.start_worker(name)
+  })
+
+const maybeCommand = process.argv[2]
+
+// Only treat it as a command if it's not an option (doesn't start with "-")
+if (maybeCommand && !maybeCommand.startsWith('-') && !VALID_COMMANDS.has(maybeCommand)) {
+  console.error(
+    `Unknown command: "${maybeCommand}".` +
+      `\nValid commands are: ${Array.from(VALID_COMMANDS).join(', ')}.`,
+  )
+
+  process.exit(1)
 }
-process.on('SIGINT', () => shutdown('SIGINT'))
-process.on('SIGTERM', () => shutdown('SIGTERM'))
+
+program.parse(process.argv)

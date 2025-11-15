@@ -17,10 +17,10 @@ export class RemoteWorker {
   ) {
     this.workerId = v4()
     this.logger = makeLogger(`Remote Worker: ${name}: ID: ${this.workerId}`)
+    this.configure()
   }
 
-  public start(): void {
-    this.logger.info('Worker Started')
+  private configure(): void {
     this.queue.onMessage(async (messageId: string, message: [WorkflowDef, RuntimeDef]) => {
       try {
         this.logger.debug(`Received message. MessageId: ${messageId}`)
@@ -56,5 +56,41 @@ export class RemoteWorker {
         this.logger.error(`Worker error: ${(err as Error).message}`)
       }
     })
+  }
+
+  public async start(): Promise<void> {
+    this.logger.info('Worker Started')
+
+    // 2. Keep process alive, exit on Ctrl+C / SIGTERM
+    await new Promise<void>((resolve) => {
+      // big interval just to hold an active handle
+      const keepAlive = setInterval(() => {
+        // no-op
+      }, 1_000_000)
+
+      const shutdown = async (signal: NodeJS.Signals) => {
+        this.logger.info(`Received ${signal}. Shutting down worker...`)
+        clearInterval(keepAlive)
+
+        try {
+          // optional: if your queue supports close / disconnect:
+          if (typeof this.queue.close === 'function') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+            await this.queue.close()
+          }
+        } catch (err) {
+          this.logger.error('Error while closing queue', { err })
+        }
+
+        process.off('SIGINT', shutdown)
+        process.off('SIGTERM', shutdown)
+        resolve()
+      }
+
+      process.on('SIGINT', shutdown)
+      process.on('SIGTERM', shutdown)
+    })
+
+    this.logger.error('Worker stopped')
   }
 }
