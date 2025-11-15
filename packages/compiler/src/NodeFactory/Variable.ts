@@ -2,6 +2,7 @@ import { BaseNode, OutputType, NodeDefType, WorkflowGlobalState } from '@mini-ma
 import { makeLogger, Logger } from '@mini-math/logger'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
+import { setGlobalValue } from './utils/globalState.js'
 
 // types.ts
 export interface Value {
@@ -114,6 +115,18 @@ export class VariableNode extends BaseNode {
         [variableName]: processedValue,
       },
       timestamp: new Date().toISOString(),
+    }
+
+    const globalStateSnapshot =
+      this.workflowGlobalState.getGlobalState<Record<string, unknown>>() ?? {}
+    const workingGlobalState = JSON.parse(JSON.stringify(globalStateSnapshot)) as Record<
+      string,
+      unknown
+    >
+    const patch = setGlobalValue(workingGlobalState, variableName, processedValue)
+
+    if (Object.keys(patch).length > 0) {
+      this.workflowGlobalState.updatePartialState(patch, { deep: true })
     }
 
     this.logger.info(`Variable node ${this.nodeDef.id} result: ${JSON.stringify(result)}`)
