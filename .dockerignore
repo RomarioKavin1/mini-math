@@ -1,0 +1,15 @@
+node_modules
+node_modules/**
+**/dist
+**/.turbo
+**/coverage
+.DS_Store
+.env*
+packages/**/tsconfig.build.tsbuildinfo
+app/**/tsconfig.build.tsbuildinfo
+
+packages/**/tsconfig.tsbuildinfo
+app/**/tsconfig.tsbuildinfo
+.gitignore
+.git
+.turbo

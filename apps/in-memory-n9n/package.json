@@ -12,6 +12,7 @@
     "clean": "rimraf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
+    "@mini-math/compiler": "^0.1.0",
     "@mini-math/keystore": "^0.1.0",
     "@mini-math/rbac": "^0.1.0",
     "@mini-math/remote-server": "*",
