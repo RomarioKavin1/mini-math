@@ -79,6 +79,12 @@ export async function main() {
   })
   console.log('grant_role', grant_role.data)
 
+  const storeSecret = await client.post('/storeSecret', {
+    secretIdentifier: 'TEST_SECRET',
+    secretData: 'thisisplainsecret',
+  })
+  console.log('storeSecret:', storeSecret.data)
+  
   const workflow_run = await client.post('/run', { ...demo_workflow, owner: wallet.address })
   console.log('workflow_run', workflow_run.data)
 
