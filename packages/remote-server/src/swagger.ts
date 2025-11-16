@@ -484,13 +484,11 @@ registry.registerPath({
 
 const generator = new OpenApiGeneratorV3(registry.definitions)
 
-const domain = 'localhost:3000'
 export const openapiDoc = generator.generateDocument({
   openapi: '3.0.0',
   info: { title: 'API', version: '1.0.0' },
-  servers: [{ url: `http://${domain}` }],
 })
-;(openapiDoc.components ??= {}).securitySchemes = {
-  ...(openapiDoc.components?.securitySchemes ?? {}),
-  cookieAuth: { type: 'apiKey', in: 'cookie', name: 'sid' },
-}
+// ;(openapiDoc.components ??= {}).securitySchemes = {
+//   ...(openapiDoc.components?.securitySchemes ?? {}),
+//   cookieAuth: { type: 'apiKey', in: 'cookie', name: 'sid' },
+// }
