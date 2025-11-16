@@ -44,32 +44,36 @@ export class PostgresSecretStore extends SecretStore {
   }
 
   protected async _saveSecret(record: SecretDataType): Promise<void> {
+    const { userId, secretIdentifier, secretData } = record
+
     try {
-      this.logger.info(
-        `Saving secret for userId=${record.userId}, secretIdentifier=${record.secretIdentifier}`,
-      )
+      this.logger.info(`Saving secret for userId=${userId}, secretIdentifier=${secretIdentifier}`)
 
-      const { userId, secretIdentifier, secretData } = record
+      await this.db.transaction(async (tx) => {
+        // 1) Try to update existing row
+        const updated = await tx
+          .update(secretStore)
+          .set({ secretData })
+          .where(
+            and(eq(secretStore.userId, userId), eq(secretStore.secretIdentifier, secretIdentifier)),
+          )
+          .returning({ userId: secretStore.userId })
 
-      await this.db
-        .insert(secretStore)
-        .values({
-          userId,
-          secretIdentifier,
-          secretData,
-        })
-        .onConflictDoUpdate({
-          target: [secretStore.userId, secretStore.secretIdentifier],
-          set: {
+        // 2) If nothing updated, insert new row
+        if (updated.length === 0) {
+          await tx.insert(secretStore).values({
+            userId,
+            secretIdentifier,
             secretData,
-          },
-        })
+          })
+        }
+      })
 
       this.logger.info(`Saved secret for userId=${userId}, secretIdentifier=${secretIdentifier}`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       this.logger.error(
-        `Failed to save secret for userId=${record.userId}, secretIdentifier=${record.secretIdentifier}: ${msg}`,
+        `Failed to save secret for userId=${userId}, secretIdentifier=${secretIdentifier}: ${msg}`,
       )
       throw err
     }

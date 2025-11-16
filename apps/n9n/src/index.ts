@@ -14,7 +14,7 @@ program
   .description('Start the HTTP server')
   .requiredOption('--domain <domain>', 'Domain to bind')
   .requiredOption('--siwe <siwe>', 'Siwe Domain to bind')
-  .action(async (opts: { domain: string, siwe: string }) => {
+  .action(async (opts: { domain: string; siwe: string }) => {
     const { domain, siwe } = opts
 
     // TODO: your real logic here
