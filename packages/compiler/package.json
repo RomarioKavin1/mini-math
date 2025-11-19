@@ -32,6 +32,7 @@
   "dependencies": {
     "@mini-math/logger": "^0.1.0",
     "@mini-math/nodes": "^0.1.0",
+    "@coinbase/cdp-sdk": "^1.36.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
