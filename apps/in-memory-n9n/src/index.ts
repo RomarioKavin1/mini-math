@@ -19,7 +19,7 @@ worker1.start()
 const worker2 = new RemoteWorker(queue, workflowStore, runtimeStore, nodeFactory, 'Simple Worker 2')
 worker2.start()
 
-const port = Number(process.env.PORT) || 3000
+const port = Number(process.env.PORT) || 3003
 const server = new Server(workflowStore, runtimeStore, nodeFactory, queue, port)
 
 await server.start()

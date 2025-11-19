@@ -45,7 +45,7 @@ export class Server {
     private runtimeStore: RuntimeStore,
     private nodeFactory: NodeFactoryType,
     private queue: IQueue<[WorkflowDef, RuntimeDef]>,
-    private readonly port: number | string = process.env.PORT || 3000,
+    private readonly port: number | string = process.env.PORT || 3003,
   ) {
     this.configureMiddleware()
     this.configureRoutes()
@@ -62,6 +62,15 @@ export class Server {
 
   private configureMiddleware(): void {
     this.app.use(express.json())
+    this.app.use((req, res, next) => {
+      res.header('Access-Control-Allow-Origin', 'http://localhost:3000')
+      res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      if (req.method === 'OPTIONS') {
+        return res.sendStatus(204)
+      }
+      next()
+    })
     this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc))
   }
 
