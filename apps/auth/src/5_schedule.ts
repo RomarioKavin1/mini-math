@@ -93,7 +93,7 @@ export async function main() {
 
   const workflow_schedule_result = await client.post<{ id: string }>('/schedule', {
     id: workflow_load_result.data.id,
-    initiateWorkflowInMs: 12000,
+    initiateWorkflowInMs: 6000,
   })
   console.log('workflow_schedule_result', workflow_schedule_result.data)
 

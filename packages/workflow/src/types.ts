@@ -1,5 +1,13 @@
 import { z } from 'zod'
-import { NodeDef, NodeDefType, EdgeDef, ExecutionResult, NodeRef } from '@mini-math/nodes'
+import {
+  NodeDef,
+  NodeDefType,
+  EdgeDef,
+  ExecutionResult,
+  NodeRef,
+  ExternalInputId,
+  ExternalInputData,
+} from '@mini-math/nodes'
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 extendZodWithOpenApi(z)
 
@@ -17,17 +25,27 @@ export const WorkflowCore = z
     edges: z.array(EdgeDef).openapi('Internode connections'),
     entry: NodeRef,
     globalState: z.unknown().optional(),
-    lock: Lock.optional(),
-    inProgress: z.boolean().optional(),
-    isInitiated: z.boolean().optional(),
   })
   .openapi('WorkflowCore')
 
 export type WorkflowCoreType = z.infer<typeof WorkflowCore>
 const WorkflowOwnerRef = z.string()
 
+export const ExternalInputStorage = z.record(NodeRef, z.record(ExternalInputId, ExternalInputData))
+export type ExternalInputStorageType = z.infer<typeof ExternalInputStorage>
+
+export const ExpectingInputFor = z.object({ node: NodeRef, inputId: ExternalInputId })
+export type ExpectingInputForType = z.infer<typeof ExpectingInputFor>
+
 export const WorkflowSchema = WorkflowCore.extend({ id: WorkflowRef })
   .extend({ owner: WorkflowOwnerRef })
+  .extend({
+    lock: Lock.optional(),
+    inProgress: z.boolean().optional(),
+    isInitiated: z.boolean().optional(),
+    expectingInputFor: ExpectingInputFor.optional(),
+    externalInputStorage: ExternalInputStorage.optional(),
+  })
   .openapi('Workflow')
 export type WorkflowDef = z.infer<typeof WorkflowSchema>
 
@@ -52,4 +70,10 @@ export interface ClockTerminated {
   exec: ExecutionResult
 }
 
-export type ClockResult = ClockOk | ClockFinished | ClockError | ClockTerminated
+export interface ClockWaitingInput {
+  status: 'waiting_for_input'
+  node: NodeDefType
+  expectingInputFor: ExpectingInputForType
+}
+
+export type ClockResult = ClockOk | ClockFinished | ClockError | ClockTerminated | ClockWaitingInput

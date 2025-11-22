@@ -20,7 +20,7 @@ import { getRoleAdmin, GrantOrRevokeRoleSchema, Role, RoleStore } from '@mini-ma
 
 import { makeLogger } from '@mini-math/logger'
 
-import { ID, openapiDoc, ScheduleWorkflowPayload } from './swagger.js'
+import { ExternalInputSchema, ID, openapiDoc, ScheduleWorkflowPayload } from './swagger.js'
 import {
   assignRequestId,
   createNewRuntime,
@@ -147,16 +147,7 @@ export class Server {
       this.handleRun,
     )
 
-    this.app.post(
-      '/clock',
-      requireAuth(),
-      mustHaveRole([Role.Developer]),
-      validateBody(ID),
-      revertIfNotWorkflowOwner(this.workflowStore),
-      revertIfNoWorkflow(this.workflowStore),
-      revertIfNoRuntime(this.runtimeStore),
-      this.handleClockWorkflow,
-    )
+    this.app.post('/clock', this.handleClockWorkflow)
 
     this.app.post('/validate', validateBody(WorkflowCore), this.handleValidate)
     this.app.post('/compile', validateBody(WorkflowCore), this.handleCompile)
@@ -189,6 +180,16 @@ export class Server {
       revertIfNoRuntime(this.runtimeStore),
       revertIfNotRightConditionForWorkflow(this.secretStore, this.nodeFactory, true),
       this.handleInitiateWorkflow,
+    )
+
+    this.app.post(
+      '/externalInput',
+      requireAuth(),
+      validateBody(ExternalInputSchema),
+      revertIfNotWorkflowOwner(this.workflowStore),
+      revertIfNoWorkflow(this.workflowStore),
+      revertIfNoRuntime(this.runtimeStore),
+      this.handleSubmitInputs,
     )
 
     this.app.post(
@@ -320,6 +321,13 @@ export class Server {
         .json({ success: false, message: `Workflow ID: ${workflow.id()} already fullfilled` })
     }
 
+    if (workflow.hasExternalInput()) {
+      return res.status(400).json({
+        success: false,
+        message: `Workflow ID: ${workflow.id()} with external input can''t be run, they must be loaded and then initiated/scheduled`,
+      })
+    }
+
     while (!workflow.isFinished()) {
       const info = await workflow.clock()
       this.logger.debug(`Clocked workflow: ${workflow.id()}`)
@@ -382,38 +390,7 @@ export class Server {
   }
 
   private handleClockWorkflow = async (req: Request, res: Response) => {
-    const wfDef = req.workflow as WorkflowDef // TODO: enfore this by types
-    const rtDef = req.runtime
-
-    const secrets = await this.secretStore.listSecrets(req.user.address)
-    const workflow = new Workflow(wfDef, this.nodeFactory, secrets, rtDef)
-    if (workflow.isFinished()) {
-      return res
-        .status(409)
-        .json({ success: false, message: `Workflow ID: ${workflow.id()} already fullfilled` })
-    }
-
-    const [_wfDef, _rtDef] = workflow.serialize()
-    this.workflowStore.update(workflow.id(), _wfDef)
-    this.runtimeStore.update(workflow.id(), _rtDef)
-
-    const info = await workflow.clock()
-    if (info.status == 'error') {
-      return res.status(400).json({
-        status: info.status,
-        error: info.code,
-        data: { workflow: _wfDef, runtime: _rtDef },
-      })
-    }
-
-    if (info.status == 'terminated') {
-      return res.status(410).json({
-        status: info.status,
-        data: { workflow: _wfDef, runtime: _rtDef, node: info.node, exec: info.exec },
-      })
-    }
-
-    return res.json(_wfDef)
+    return res.status(400).json({ success: false, message: 'revoked' })
   }
 
   private handleInitiateWorkflow = async (req: Request, res: Response) => {
@@ -422,12 +399,58 @@ export class Server {
       return res.status(500).json({ status: false, message: 'Failed to initiate workflow' })
     } else {
       const delayTime = req.initiateWorkflowInMs || 0
+      const result1 = await this.workflowStore.update(id, { isInitiated: true })
+      const result2 = await this.queue.enqueue(id, delayTime)
+      this.logger.trace(JSON.stringify(result1))
+      this.logger.trace(JSON.stringify(result2))
+      return res.json({ success: true })
+    }
+  }
+
+  private handleSubmitInputs = async (req: Request, res: Response) => {
+    const wfDef = req.workflow as WorkflowDef // TODO: enfore this by types
+    const rtDef = req.runtime as RuntimeDef // TODO: enfore this by types
+
+    const workflow = new Workflow(wfDef, this.nodeFactory, [], rtDef)
+    if (workflow.isFinished()) {
+      return res.status(200).json({ status: 'finished', result: wfDef })
+    }
+
+    const expectingInputFor = workflow.expectingInputFor()
+    if (expectingInputFor) {
+      const inputFromUser = req.body as z.infer<typeof ExternalInputSchema>
+      if (expectingInputFor.node != inputFromUser.nodeId) {
+        return res.status(400).json({
+          status: false,
+          message: `Expecting input to node: ${expectingInputFor.node} and not ${inputFromUser.nodeId}`,
+        })
+      }
+
+      if (expectingInputFor.inputId != inputFromUser.externalInputId) {
+        return res.status(400).json({
+          status: false,
+          message: `Expecting input for inputID: ${expectingInputFor.inputId} and not ${inputFromUser.externalInputId}`,
+        })
+      }
+
+      const updatedExternalInputStorage = workflow.appendExternalInput(
+        inputFromUser.nodeId,
+        inputFromUser.externalInputId,
+        inputFromUser.data,
+      )
       const result = await Promise.all([
-        this.workflowStore.update(id, { isInitiated: true }),
-        this.queue.enqueue(id, delayTime),
+        this.workflowStore.update(workflow.id(), {
+          externalInputStorage: updatedExternalInputStorage,
+          expectingInputFor: undefined,
+        }),
+        //TODO:  added little delay on purpose, ideally not required, make relevant tests to see atomicity
+        await this.queue.enqueue(workflow.id()),
       ])
+
       this.logger.trace(JSON.stringify(result))
       return res.json({ success: true })
+    } else {
+      return res.status(400).json({ status: false, message: 'Not expecting any input' })
     }
   }
 
@@ -436,10 +459,22 @@ export class Server {
     const rtDef = req.runtime as RuntimeDef // TODO: enfore this by types
 
     const workflow = new Workflow(wfDef, this.nodeFactory, [], rtDef)
-    if (!workflow.isFinished()) {
-      return res.status(206).json(wfDef)
-    } else {
-      return res.status(200).json(wfDef)
+    if (workflow.isFinished()) {
+      return res.status(200).json({ status: 'finished', result: wfDef })
     }
+    const expectingInputFor = workflow.expectingInputFor()
+    if (expectingInputFor) {
+      return res.status(206).json({ status: 'awaitingInput', expectingInputFor })
+    }
+
+    if (workflow.inProgress()) {
+      return res.status(206).json({ status: 'inProgress' })
+    }
+
+    if (workflow.isInitiated()) {
+      return res.status(206).json({ status: 'initiated' })
+    }
+
+    return res.status(200).json({ status: 'idle' })
   }
 }

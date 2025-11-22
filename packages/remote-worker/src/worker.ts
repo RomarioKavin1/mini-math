@@ -6,7 +6,7 @@ import { Logger, makeLogger } from '@mini-math/logger'
 import { v4 } from 'uuid'
 import { NodeFactoryType } from '@mini-math/compiler'
 
-const WORKER_CLOCK_TIME_IN_MS = 100
+const WORKER_CLOCK_TIME_IN_MS = 2000
 
 export class RemoteWorker {
   private logger: Logger
@@ -56,6 +56,25 @@ export class RemoteWorker {
           const info = await workflow.clock()
           this.logger.debug(`Clocked workflow: ${workflow.id()}`)
           this.logger.trace(JSON.stringify(info))
+
+          if (info.status == 'waiting_for_input') {
+            this.logger.debug(
+              `Workflow ID: ${wfId} has been paused, as it is expecting input: ${JSON.stringify(info)}`,
+            )
+            const result = await this.workflowStore.update(workflow.id(), {
+              expectingInputFor: info.expectingInputFor,
+            })
+            this.logger.trace(JSON.stringify(result))
+
+            const result2 = await Promise.all([
+              this.workflowStore.releaseLock(wfId),
+              this.queue.ack(messageId),
+            ])
+            this.logger.trace(JSON.stringify(result2))
+            return
+          }
+
+          this.logger.trace(`Clock Status of workflow: ${info.status}`)
 
           const [wfNext, rtNext] = workflow.serialize()
 

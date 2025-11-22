@@ -3,7 +3,7 @@ import { pgTable, varchar, text, jsonb, timestamp, index, boolean } from 'drizzl
 import { sql } from 'drizzle-orm'
 
 import type { NodeDefType, EdgeDefType, NodeRefType } from '@mini-math/nodes'
-import type { LockType } from '@mini-math/workflow'
+import type { ExpectingInputForType, ExternalInputStorageType, LockType } from '@mini-math/workflow'
 
 export const workflows = pgTable(
   'workflows',
@@ -31,6 +31,13 @@ export const workflows = pgTable(
 
     inProgress: boolean('in_progress').notNull().default(false),
     isInitiated: boolean('is_initiated').notNull().default(false),
+    expectingInputFor: jsonb('expectingInputFor')
+      .$type<ExpectingInputForType | null>()
+      .default(sql`null`),
+
+    externalInputStorage: jsonb('externalInputStorage')
+      .$type<ExternalInputStorageType | null>()
+      .default(sql`null`),
 
     // optional meta
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
