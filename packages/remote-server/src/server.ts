@@ -5,6 +5,7 @@ import helmet from 'helmet'
 import swaggerUi from 'swagger-ui-express'
 
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
+import cors from 'cors';
 
 import {
   Workflow,
@@ -91,6 +92,7 @@ export class Server {
       defaultTTLSeconds: 60 * 60 * 24,
     })
 
+    this.app.use(cors())
     this.app.use(express.json())
     this.app.use(helmet())
 
