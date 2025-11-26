@@ -92,7 +92,24 @@ export class Server {
       defaultTTLSeconds: 60 * 60 * 24,
     })
 
-    this.app.use(cors())
+    const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+
+    const corsMiddleware = cors({
+      origin: allowedOrigins,
+      credentials: true,
+    })
+
+    this.app.use(corsMiddleware)
+    this.app.use((req, res, next) => {
+      if (req.method === 'OPTIONS') {
+        corsMiddleware(req, res, next)
+      } else {
+        next()
+      }
+    })
     this.app.use(express.json())
     this.app.use(helmet())
 
