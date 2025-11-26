@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-RUN npm install --include-dev
+RUN npm install
 RUN npm run build
 
 FROM node:24-alpine
