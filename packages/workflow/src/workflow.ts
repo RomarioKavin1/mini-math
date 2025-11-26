@@ -240,7 +240,7 @@ export class Workflow implements WorkflowGlobalState {
     const missingExternalInputId = this._getNextMissingExternalInputId(currentNode)
 
     if (missingExternalInputId) {
-      this.logger.debug(
+      this.logger.trace(
         `Workflow ID: ${this.workflowDef.id} node=${currentNodeId} is waiting for external input: ${missingExternalInputId}`,
       )
 

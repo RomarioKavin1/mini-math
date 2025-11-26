@@ -32,10 +32,10 @@ export class RemoteWorker {
   private configure(): void {
     this.queue.onMessage(async (messageId: string, wfId: WorkflowRefType) => {
       try {
-        this.logger.debug(`Received message. MessageId: ${messageId}`)
+        this.logger.info(`Received message. MessageId: ${messageId}`)
         const lock = await this.workflowStore.acquireLock(wfId, this.workerName)
         if (lock) {
-          this.logger.debug(`Acquired lock on workflow ${wfId} successfully`)
+          this.logger.trace(`Acquired lock on workflow ${wfId} successfully`)
           const wf = await this.workflowStore.get(wfId)
           const rt = await this.runtimeStore.get(wfId)
           wf.inProgress = true
@@ -54,11 +54,11 @@ export class RemoteWorker {
           }
 
           const info = await workflow.clock()
-          this.logger.debug(`Clocked workflow: ${workflow.id()}`)
+          this.logger.trace(`Clocked workflow: ${workflow.id()}`)
           this.logger.trace(JSON.stringify(info))
 
           if (info.status == 'waiting_for_input') {
-            this.logger.debug(
+            this.logger.trace(
               `Workflow ID: ${wfId} has been paused, as it is expecting input: ${JSON.stringify(info)}`,
             )
             const result = await this.workflowStore.update(workflow.id(), {
@@ -89,7 +89,7 @@ export class RemoteWorker {
             this.queue.ack(messageId),
           ])
           this.logger.trace(JSON.stringify(result2))
-          this.logger.debug(`Released lock on workflow ${wfId} successfully`)
+          this.logger.trace(`Released lock on workflow ${wfId} successfully`)
 
           // Best: schedule, fire-and-forget, but catch errors so they don't become unhandled rejections
           queueMicrotask(() => {

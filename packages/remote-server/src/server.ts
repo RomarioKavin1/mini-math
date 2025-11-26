@@ -332,7 +332,7 @@ export class Server {
 
     while (!workflow.isFinished()) {
       const info = await workflow.clock()
-      this.logger.debug(`Clocked workflow: ${workflow.id()}`)
+      this.logger.trace(`Clocked workflow: ${workflow.id()}`)
       this.logger.trace(JSON.stringify(info))
 
       const [wf, rt] = workflow.serialize()

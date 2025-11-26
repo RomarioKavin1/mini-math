@@ -69,7 +69,7 @@ export class PostgresSecretStore extends SecretStore {
         }
       })
 
-      this.logger.debug(`Saved secret for userId=${userId}, secretIdentifier=${secretIdentifier}`)
+      this.logger.trace(`Saved secret for userId=${userId}, secretIdentifier=${secretIdentifier}`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       this.logger.error(
@@ -96,13 +96,13 @@ export class PostgresSecretStore extends SecretStore {
       })
 
       if (!row) {
-        this.logger.debug(
+        this.logger.trace(
           `No secret found for userId=${userId}, secretIdentifier=${secretIdentifier}`,
         )
         return null
       }
 
-      this.logger.debug(`Found secret for userId=${userId}, secretIdentifier=${secretIdentifier}`)
+      this.logger.trace(`Found secret for userId=${userId}, secretIdentifier=${secretIdentifier}`)
 
       return {
         userId: row.userId,
@@ -132,7 +132,7 @@ export class PostgresSecretStore extends SecretStore {
 
       const success = deleted.length > 0
 
-      this.logger.debug(
+      this.logger.trace(
         `Delete secret result for userId=${userId}, secretIdentifier=${secretIdentifier}: ${success}`,
       )
 
@@ -151,7 +151,7 @@ export class PostgresSecretStore extends SecretStore {
 
       const rows = await this.db.select().from(secretStore).where(eq(secretStore.userId, userId))
 
-      this.logger.debug(`Found ${rows.length} secrets for userId=${userId}`)
+      this.logger.trace(`Found ${rows.length} secrets for userId=${userId}`)
 
       return rows.map((row) => ({
         userId: row.userId,

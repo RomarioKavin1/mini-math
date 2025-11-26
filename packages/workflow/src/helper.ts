@@ -49,7 +49,7 @@ export function bfsTraverse(workflowDef: Readonly<WorkflowDef>): void {
     const currentNode = nodeById.get(currentId)!
 
     if (currentNode) {
-      logger.debug(`bfs-traverse: current-node: ${currentNode.id}`)
+      logger.trace(`bfs-traverse: current-node: ${currentNode.id}`)
     }
 
     // *** your “operation when specific node” check ***

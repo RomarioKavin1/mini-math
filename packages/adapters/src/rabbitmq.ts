@@ -216,7 +216,7 @@ export class RabbitMQQueue<T> implements IQueue<T> {
       const queueInfo = await this.channel.checkQueue(this.queueName)
       return queueInfo.messageCount + this.inFlight.size
     } catch (error) {
-      this.logger.warn('[RabbitMQ] Could not get queue size, channel might be closed.')
+      this.logger.error('[RabbitMQ] Could not get queue size, channel might be closed.')
       this.logger.error(JSON.stringify(error))
       return this.inFlight.size
     }

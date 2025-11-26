@@ -47,7 +47,7 @@ export class InMemoryQueue<T> implements IQueue<T> {
           this.ensureOpen()
         } catch {
           // queue was closed in the meantime; just drop it
-          this.logger.warn(`dropping delayed message because queue is closed`, { messageId })
+          this.logger.trace(`dropping delayed message because queue is closed`, { messageId })
           return
         }
 
@@ -68,7 +68,7 @@ export class InMemoryQueue<T> implements IQueue<T> {
     this.ensureOpen()
     const id = this.generateId()
     this.consumers.push({ id, fn: callback, busy: false })
-    this.logger.debug(`consumer_added`, { consumerId: id, total: this.consumers.length })
+    this.logger.trace(`consumer_added`, { consumerId: id, total: this.consumers.length })
     queueMicrotask(() => this.kick())
   }
 
@@ -90,9 +90,9 @@ export class InMemoryQueue<T> implements IQueue<T> {
     if (requeue) {
       // push a fresh copy
       this.queue.push({ messageId: entry.messageId, item: entry.item })
-      this.logger.debug(`nack -> requeued`, { messageId })
+      this.logger.trace(`nack -> requeued`, { messageId })
     } else {
-      this.logger.debug(`nack -> dropped`, { messageId })
+      this.logger.trace(`nack -> dropped`, { messageId })
     }
     queueMicrotask(() => this.kick())
   }
@@ -105,7 +105,7 @@ export class InMemoryQueue<T> implements IQueue<T> {
     this.queue = []
     this.inFlight.clear()
     this.byMessageConsumer.clear()
-    this.logger.warn(`purged`)
+    this.logger.trace(`purged`)
   }
 
   async close(): Promise<void> {

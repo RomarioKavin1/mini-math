@@ -19,7 +19,15 @@ const root = pino({
   level: process.env.LOG_LEVEL ?? 'trace',
   base: null,
   transport: isProd
-    ? undefined
+    ? {
+        target: 'pino-elasticsearch',
+        options: {
+          node: process.env.ELASTICSEARCH_NODE || 'http://localhost:9200',
+          index: process.env.ELASTICSEARCH_INDEX ?? 'n9n-backend',
+          'es-version': 8,
+          flushBytes: 1000,
+        },
+      }
     : {
         target: 'pino-pretty',
         options: { colorize: true, singleLine: true, translateTime: 'SYS:HH:MM:ss.l' },
@@ -56,5 +64,5 @@ function wrap(instance: pino.Logger): Logger {
 export const logger: Logger = wrap(root)
 
 export function makeLogger(service: string): Logger {
-  return logger.child({ service })
+  return logger.child({ service, env: process.env.NODE_ENV })
 }

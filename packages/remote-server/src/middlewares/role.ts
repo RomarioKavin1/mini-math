@@ -18,7 +18,7 @@ export const revertIfNoRole =
       const user = req.user
 
       if (!user) {
-        logger.warn('No user on request')
+        logger.trace('No user on request')
         return res.status(401).json({ success: false, message: 'user not found' })
       }
 
