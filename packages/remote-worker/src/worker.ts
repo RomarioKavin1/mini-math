@@ -1,6 +1,6 @@
 import { IQueue } from '@mini-math/queue'
-import { RuntimeDef, RuntimeStore } from '@mini-math/runtime'
-import { Workflow, WorkflowDef, WorkflowRefType, WorkflowStore } from '@mini-math/workflow'
+import { RuntimeStore } from '@mini-math/runtime'
+import { Workflow, WorkflowRefType, WorkflowStore } from '@mini-math/workflow'
 import { SecretStore } from '@mini-math/secrets'
 import { Logger, makeLogger } from '@mini-math/logger'
 import { v4 } from 'uuid'

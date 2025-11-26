@@ -616,9 +616,9 @@ export class CdpService {
     const mappedNetwork = networkMap[network]
     if (!mappedNetwork) {
       throw new Error(
-        `Token balances unavailable for ${network}. Supported networks: ${Object.keys(networkMap).join(
-          ', ',
-        )}`,
+        `Token balances unavailable for ${network}. Supported networks: ${Object.keys(
+          networkMap,
+        ).join(', ')}`,
       )
     }
 

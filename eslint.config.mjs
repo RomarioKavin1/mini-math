@@ -6,16 +6,7 @@ import eslintConfigPrettier from 'eslint-config-prettier'
 export default tseslint.config(
   // Ignore build artifacts and deps
   {
-    ignores: [
-      '**/dist/**',
-      '**/node_modules/**',
-      '**/.turbo/**',
-      '**/coverage/**',
-      // 'packages/compiler/src/NodeFactory/utils/cdpService.ts',
-      // 'packages/compiler/src/NodeFactory/CdpTransaction.ts',
-      // 'packages/compiler/src/NodeFactory/CdpSmartContract.ts',
-      // 'packages/compiler/src/NodeFactory/CdpSign.ts',
-    ],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/.turbo/**', '**/coverage/**'],
   },
 
   // Basic recommended TS/JS rules (no type-checking pass needed)
