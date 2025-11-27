@@ -70,6 +70,7 @@ export class Server {
     private siweDomain: string,
     private readonly session_secret: string,
     private readonly secure: boolean,
+    private allowedOrigins: string[],
   ) {
     this.configureMiddleware()
     this.configureRoutes()
@@ -92,10 +93,7 @@ export class Server {
       defaultTTLSeconds: 60 * 60 * 24,
     })
 
-    const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
-      .split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean)
+    const allowedOrigins = this.allowedOrigins
 
     const corsMiddleware = cors({
       origin: allowedOrigins,

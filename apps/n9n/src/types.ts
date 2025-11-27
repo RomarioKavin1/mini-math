@@ -29,7 +29,11 @@ const secretStore = new PostgresSecretStore(adapterConfig.getPostgresUrl())
 const sessionStore = new RedisStore(adapterConfig.getRedisUrl())
 
 export class App {
-  public static async start_server(DOMAIN: string, SIWE_DOMAIN: string): Promise<void> {
+  public static async start_server(
+    DOMAIN: string,
+    SIWE_DOMAIN: string,
+    allowedOrigins: string[],
+  ): Promise<void> {
     const server = new Server(
       workflowStore,
       runtimeStore,
@@ -42,6 +46,7 @@ export class App {
       SIWE_DOMAIN,
       'super-long-session-secret',
       false,
+      allowedOrigins,
     )
 
     return server.start()

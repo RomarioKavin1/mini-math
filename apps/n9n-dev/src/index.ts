@@ -64,6 +64,7 @@ const server = new Server(
   SIWE_DOMAIN,
   'super-long-session-secret',
   false,
+  ['http://localhost:3000'],
 )
 
 await server.start()

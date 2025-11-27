@@ -14,13 +14,21 @@ program
   .description('Start the HTTP server')
   .requiredOption('--domain <domain>', 'Domain to bind')
   .requiredOption('--siwe <siwe>', 'Siwe Domain to bind')
-  .action(async (opts: { domain: string; siwe: string }) => {
-    const { domain, siwe } = opts
+  .requiredOption('--allowed-origins <allowedOrigins>', 'Siwe Domain to bind')
+  .action(async (opts: { domain: string; siwe: string; allowedOrigins: string }) => {
+    const { domain, siwe, allowedOrigins } = opts
 
     // TODO: your real logic here
     console.log(`Starting server on domain: ${domain}`)
 
-    await App.start_server(domain, siwe)
+    await App.start_server(
+      domain,
+      siwe,
+      allowedOrigins
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+    )
   })
 
 // app start-worker --name worker-1

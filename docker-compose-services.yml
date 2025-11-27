@@ -18,6 +18,8 @@ services:
         '0.0.0.0:3000',
         '--siwe',
         '${SIWE_DOMAIN}',
+        '--allowed-origins',
+        '${ALLOWED_ORIGINS:-http://localhost:3000}',
       ]
     ports:
       - 3000:3000
