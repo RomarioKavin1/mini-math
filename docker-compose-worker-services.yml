@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  n9n-worker-1:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-3
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker3']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-3}
+
+  n9n-worker-2:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-4
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker4']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-4}

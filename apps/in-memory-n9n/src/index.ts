@@ -19,25 +19,17 @@ const sessionStore = new InMemoryKeyValueStore()
 const secretStore = new InMemorySecretStore()
 const roleStore = new InMemoryRoleStore(INIT_PLATFORM_OWNER)
 
-const worker1 = new RemoteWorker(
-  queue,
-  workflowStore,
-  runtimeStore,
-  secretStore,
-  nodeFactory,
-  'Simple Worker 1',
-)
-worker1.start()
-
-const worker2 = new RemoteWorker(
-  queue,
-  workflowStore,
-  runtimeStore,
-  secretStore,
-  nodeFactory,
-  'Simple Worker 2',
-)
-worker2.start()
+for (let i = 1; i <= 10; i++) {
+  const worker = new RemoteWorker(
+    queue,
+    workflowStore,
+    runtimeStore,
+    secretStore,
+    nodeFactory,
+    `Simple Worker ${i}`,
+  )
+  worker.start()
+}
 
 const DOMAIN = process.env.DOMAIN!
 const SIWE_DOMAIN = process.env.SIWE_DOMAIN!

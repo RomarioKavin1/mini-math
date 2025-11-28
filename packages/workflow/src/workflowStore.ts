@@ -1,4 +1,10 @@
-import { LockType, WorkflowCoreType, type WorkflowDef } from './types.js'
+import {
+  LockType,
+  NextLinkedWorkflowType,
+  WorkflowCoreType,
+  WorkflowRefType,
+  type WorkflowDef,
+} from './types.js'
 
 export type WorkflowStoreErrorCode =
   | 'ALREADY_EXISTS'
@@ -47,9 +53,13 @@ export abstract class WorkflowStore {
     workflowId: string,
     core: WorkflowCoreType,
     owner: string,
+    options: {
+      previousLinkedWorkflow?: WorkflowRefType
+      nextLinkedWorkflow?: NextLinkedWorkflowType
+    } = {},
   ): Promise<WorkflowDef> {
     await this.ensureInitialized()
-    return this._create(workflowId, core, owner)
+    return this._create(workflowId, core, owner, { ...options })
   }
 
   public async get(workflowId: string): Promise<WorkflowDef> {
@@ -137,6 +147,10 @@ export abstract class WorkflowStore {
     workflowId: string,
     core: WorkflowCoreType,
     owner: string,
+    options?: {
+      previousLinkedWorkflow?: WorkflowRefType
+      nextLinkedWorkflow?: NextLinkedWorkflowType
+    },
   ): Promise<WorkflowDef>
 
   protected abstract _get(workflowId: string): Promise<WorkflowDef>

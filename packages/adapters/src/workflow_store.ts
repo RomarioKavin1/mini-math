@@ -1,8 +1,10 @@
 import {
   ListOptions,
   ListResult,
+  NextLinkedWorkflowType,
   WorkflowCoreType,
   WorkflowDef,
+  WorkflowRefType,
   WorkflowStore,
 } from '@mini-math/workflow'
 
@@ -66,8 +68,12 @@ export class PostgresWorkflowstore extends WorkflowStore {
     workflowId: string,
     core: WorkflowCoreType,
     owner: string,
+    options: {
+      previousLinkedWorkflow?: WorkflowRefType
+      nextLinkedWorkflow?: NextLinkedWorkflowType
+    } = {},
   ): Promise<WorkflowDef> {
-    const insert = coreToInsert(workflowId, core, owner)
+    const insert = coreToInsert(workflowId, core, owner, options)
 
     this.logger.trace(`trying to create workflow with id ${workflowId}`)
 
@@ -145,6 +151,16 @@ export class PostgresWorkflowstore extends WorkflowStore {
       if ('externalInputStorage' in patch) {
         update.externalInputStorage =
           patch.externalInputStorage === undefined ? null : patch.externalInputStorage
+      }
+
+      if ('previousLinkedWorkflow' in patch) {
+        update.previousLinkedWorkflow =
+          patch.previousLinkedWorkflow === undefined ? null : patch.previousLinkedWorkflow
+      }
+
+      if ('nextLinkedWorkflow' in patch) {
+        update.nextLinkedWorkflow =
+          patch.nextLinkedWorkflow === undefined ? null : patch.nextLinkedWorkflow
       }
 
       if (Object.keys(update).length === 0) {
@@ -283,7 +299,15 @@ export class PostgresWorkflowstore extends WorkflowStore {
   }
 }
 
-function coreToInsert(workflowId: string, core: WorkflowCoreType, owner: string): WorkflowInsert {
+function coreToInsert(
+  workflowId: string,
+  core: WorkflowCoreType,
+  owner: string,
+  options: {
+    previousLinkedWorkflow?: WorkflowRefType
+    nextLinkedWorkflow?: NextLinkedWorkflowType
+  } = {},
+): WorkflowInsert {
   return {
     id: workflowId,
     owner,
@@ -293,6 +317,8 @@ function coreToInsert(workflowId: string, core: WorkflowCoreType, owner: string)
     edges: core.edges,
     entry: core.entry,
     globalState: core.globalState === undefined ? null : (core.globalState as unknown),
+    previousLinkedWorkflow: options?.previousLinkedWorkflow ?? null,
+    nextLinkedWorkflow: options?.nextLinkedWorkflow ?? null,
   }
 }
 
@@ -326,6 +352,16 @@ function rowToDef(row: WorkflowRow): WorkflowDef {
       row.externalInputStorage === null || row.externalInputStorage === undefined
         ? undefined
         : row.externalInputStorage,
+
+    previousLinkedWorkflow:
+      row.previousLinkedWorkflow === null || row.previousLinkedWorkflow === undefined
+        ? undefined
+        : row.previousLinkedWorkflow,
+
+    nextLinkedWorkflow:
+      row.nextLinkedWorkflow === null || row.nextLinkedWorkflow === undefined
+        ? undefined
+        : row.nextLinkedWorkflow,
 
     // if WorkflowDef carries timestamps, this matches that shape
     createdAt: row.createdAt,

@@ -50,6 +50,20 @@
       "when": 1763762808569,
       "tag": "0006_normal_the_renegades",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1764266042445,
+      "tag": "0007_nervous_lionheart",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1764317072092,
+      "tag": "0008_legal_lord_hawal",
+      "breakpoints": true
     }
   ]
 }

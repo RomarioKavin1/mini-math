@@ -37,6 +37,12 @@ export type ExternalInputStorageType = z.infer<typeof ExternalInputStorage>
 export const ExpectingInputFor = z.object({ node: NodeRef, inputId: ExternalInputId })
 export type ExpectingInputForType = z.infer<typeof ExpectingInputFor>
 
+export const NextLinkedWorkflow = z
+  .array(z.object({ id: WorkflowRef, executionDelay: z.number() }))
+  .min(1)
+  .max(10)
+export type NextLinkedWorkflowType = z.infer<typeof NextLinkedWorkflow>
+
 export const WorkflowSchema = WorkflowCore.extend({ id: WorkflowRef })
   .extend({ owner: WorkflowOwnerRef })
   .extend({
@@ -45,6 +51,10 @@ export const WorkflowSchema = WorkflowCore.extend({ id: WorkflowRef })
     isInitiated: z.boolean().optional(),
     expectingInputFor: ExpectingInputFor.optional(),
     externalInputStorage: ExternalInputStorage.optional(),
+  })
+  .extend({
+    previousLinkedWorkflow: WorkflowRef.optional(),
+    nextLinkedWorkflow: NextLinkedWorkflow.optional(),
   })
   .openapi('Workflow')
 export type WorkflowDef = z.infer<typeof WorkflowSchema>

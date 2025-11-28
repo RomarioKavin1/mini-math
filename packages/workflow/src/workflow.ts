@@ -19,6 +19,8 @@ import {
   ExpectingInputForType,
   WorkflowDef,
   ExternalInputStorageType,
+  WorkflowRefType,
+  NextLinkedWorkflowType,
 } from './types.js'
 import { bfsTraverse, hasCycle, deepClone } from './helper.js'
 import { BaseSecretType } from '@mini-math/secrets'
@@ -546,5 +548,13 @@ export class Workflow implements WorkflowGlobalState {
 
     // return a deep-cloned snapshot
     return deepClone(updatedStorage)
+  }
+
+  public previousLinkedWorkflow(): WorkflowRefType | undefined {
+    return this.workflowDef.previousLinkedWorkflow
+  }
+
+  public nextLinkedWorkflow(): NextLinkedWorkflowType | undefined {
+    return this.workflowDef.nextLinkedWorkflow
   }
 }

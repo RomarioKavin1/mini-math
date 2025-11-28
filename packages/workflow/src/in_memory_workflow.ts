@@ -1,5 +1,12 @@
 import { ZodError } from 'zod'
-import { WorkflowCore, WorkflowCoreType, WorkflowSchema, type WorkflowDef } from './types.js'
+import {
+  NextLinkedWorkflowType,
+  WorkflowCore,
+  WorkflowCoreType,
+  WorkflowRefType,
+  WorkflowSchema,
+  type WorkflowDef,
+} from './types.js'
 import {
   WorkflowStore,
   WorkflowStoreError,
@@ -16,6 +23,10 @@ export class InMemoryWorkflowStore extends WorkflowStore {
     workflowId: string,
     core: WorkflowCoreType,
     owner: string,
+    options?: {
+      previousLinkedWorkflow?: WorkflowRefType
+      nextLinkedWorkflow?: NextLinkedWorkflowType
+    },
   ): Promise<WorkflowDef> {
     if (!workflowId) throw new WorkflowStoreError('VALIDATION', 'workflowId is required')
 
@@ -25,7 +36,7 @@ export class InMemoryWorkflowStore extends WorkflowStore {
 
     try {
       const parsedCore = WorkflowCore.parse(core)
-      const full = WorkflowSchema.parse({ ...parsedCore, id: workflowId, owner })
+      const full = WorkflowSchema.parse({ ...parsedCore, id: workflowId, owner, ...options })
       this.store.set(workflowId, full)
       return deepClone(full)
     } catch (err) {

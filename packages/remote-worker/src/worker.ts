@@ -45,11 +45,26 @@ export class RemoteWorker {
           const workflow = new Workflow(wf, this.nodeFactory, secrets, rt.serialize())
 
           if (workflow.isFinished()) {
-            const result = await Promise.all([
-              this.workflowStore.update(wfId, { inProgress: false, isInitiated: false }),
-              this.queue.ack(messageId),
-            ])
+            const result = await this.workflowStore.update(wfId, {
+              inProgress: false,
+              isInitiated: false,
+            })
             this.logger.trace(JSON.stringify(result))
+
+            const nextLinkedWorkflow = workflow.nextLinkedWorkflow()
+
+            if (nextLinkedWorkflow) {
+              for (let index = 0; index < nextLinkedWorkflow.length; index++) {
+                const element = nextLinkedWorkflow[index]
+                this.logger.trace(
+                  `Initiating next linked workflow: ${element.id} with executionDelay: ${element.executionDelay}`,
+                )
+                const result = await this.queue.enqueue(element.id, element.executionDelay)
+                this.logger.trace(result)
+              }
+            }
+
+            await this.queue.ack(messageId)
             return
           }
 
@@ -84,19 +99,15 @@ export class RemoteWorker {
           ])
           this.logger.trace(JSON.stringify(result))
 
+          await this.workflowStore.releaseLock(wfId)
+          this.logger.trace(`Released lock on workflow ${wfId} successfully`)
+
           const result2 = await Promise.all([
-            this.workflowStore.releaseLock(wfId),
+            this.queue.enqueue(wfId, this.workerClockTime),
             this.queue.ack(messageId),
           ])
           this.logger.trace(JSON.stringify(result2))
-          this.logger.trace(`Released lock on workflow ${wfId} successfully`)
-
-          // Best: schedule, fire-and-forget, but catch errors so they don't become unhandled rejections
-          queueMicrotask(() => {
-            void this.queue.enqueue(wfId, this.workerClockTime).catch((err) => {
-              this.logger.error('re-enqueue failed', { err })
-            })
-          })
+          return
         } else {
           await this.queue.nack(messageId, true)
         }

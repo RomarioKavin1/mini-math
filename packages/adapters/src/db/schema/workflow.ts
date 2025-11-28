@@ -3,7 +3,12 @@ import { pgTable, varchar, text, jsonb, timestamp, index, boolean } from 'drizzl
 import { sql } from 'drizzle-orm'
 
 import type { NodeDefType, EdgeDefType, NodeRefType } from '@mini-math/nodes'
-import type { ExpectingInputForType, ExternalInputStorageType, LockType } from '@mini-math/workflow'
+import type {
+  ExpectingInputForType,
+  ExternalInputStorageType,
+  LockType,
+  NextLinkedWorkflowType,
+} from '@mini-math/workflow'
 
 export const workflows = pgTable(
   'workflows',
@@ -39,6 +44,10 @@ export const workflows = pgTable(
       .$type<ExternalInputStorageType | null>()
       .default(sql`null`),
 
+    previousLinkedWorkflow: text('previous_linked_workflow'),
+    nextLinkedWorkflow: jsonb('next_linked_workflow')
+      .$type<NextLinkedWorkflowType | null>()
+      .default(sql`null`),
     // optional meta
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -57,6 +66,9 @@ export const workflows = pgTable(
 
       // index on owner
       ownerIdx: index('workflows_owner_idx').on(table.owner),
+
+      prevLinkedIdx: index('workflows_prev_linked_idx').on(table.previousLinkedWorkflow),
+      nextLinkedIdx: index('workflows_next_linked_idx').on(table.nextLinkedWorkflow),
     },
   ],
 )

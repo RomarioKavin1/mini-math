@@ -21,7 +21,13 @@ import { getRoleAdmin, GrantOrRevokeRoleSchema, Role, RoleStore } from '@mini-ma
 
 import { makeLogger } from '@mini-math/logger'
 
-import { ExternalInputSchema, ID, openapiDoc, ScheduleWorkflowPayload } from './swagger.js'
+import {
+  CronedWorkflowCoreSchema,
+  ExternalInputSchema,
+  ID,
+  openapiDoc,
+  ScheduleWorkflowPayload,
+} from './swagger/index.js'
 import {
   assignRequestId,
   createNewRuntime,
@@ -51,6 +57,7 @@ import {
   handleStoreSecret,
 } from './secret.js'
 import { ensureMaxSecretsCount } from './middlewares/secret.js'
+import { handleCronJob } from './cron.js'
 
 extendZodWithOpenApi(z)
 
@@ -177,6 +184,7 @@ export class Server {
       createNewRuntime(this.runtimeStore),
       this.handleLoad,
     )
+
     this.app.post(
       '/initiate',
       requireAuth(),
@@ -262,6 +270,13 @@ export class Server {
       '/fetchAllSecretIdentifiers',
       requireAuth(),
       handleFetchAllSecretIdentifiers(this.secretStore),
+    )
+
+    this.app.post(
+      '/cron',
+      requireAuth(),
+      validateBody(CronedWorkflowCoreSchema),
+      handleCronJob(this.workflowStore, this.runtimeStore, this.queue),
     )
 
     this.app.get('/me', requireAuth(), (req, res) => {
