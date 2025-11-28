@@ -13,3 +13,4 @@ app/**/tsconfig.tsbuildinfo
 .gitignore
 .git
 .turbo
+*.yml
