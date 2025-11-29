@@ -10,3 +10,5 @@ app/**/tsconfig.build.tsbuildinfo
 
 packages/**/tsconfig.tsbuildinfo
 app/**/tsconfig.tsbuildinfo
+
+docker-compose-worker-services.yml

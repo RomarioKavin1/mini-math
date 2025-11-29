@@ -1,16 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ $# -lt 1 ]; then
-  echo "Usage: $0 <worker-count>" >&2
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <start-index> <end-index>" >&2
   exit 1
 fi
 
-COUNT="$1"
+START="$1"
+END="$2"
 
-# Basic sanity check
-if ! [ "$COUNT" -gt 0 ] 2>/dev/null; then
-  echo "Error: <worker-count> must be a positive integer" >&2
+# Basic sanity checks
+if ! [ "$START" -gt 0 ] 2>/dev/null; then
+  echo "Error: <start-index> must be a positive integer" >&2
+  exit 1
+fi
+
+if ! [ "$END" -gt 0 ] 2>/dev/null; then
+  echo "Error: <end-index> must be a positive integer" >&2
+  exit 1
+fi
+
+if [ "$END" -lt "$START" ]; then
+  echo "Error: <end-index> must be greater than or equal to <start-index>" >&2
   exit 1
 fi
 
@@ -18,7 +29,7 @@ echo "version: '3.9'"
 echo
 echo "services:"
 
-for i in $(seq 1 "$COUNT"); do
+for i in $(seq "$START" "$END"); do
   cat <<EOF
   n9n-worker-$i:
     build:
