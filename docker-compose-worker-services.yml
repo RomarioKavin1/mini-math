@@ -1,30 +1,32 @@
 version: '3.9'
 
 services:
-  n9n-worker-33:
+  n9n-worker-1:
     build:
       context: .
       dockerfile: ./Dockerfile
-    container_name: n9n-worker-33
+    container_name: n9n-worker-1
     restart: unless-stopped
     env_file:
       - .env
-    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker33']
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker1']
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-33}
-  n9n-worker-34:
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-1}
+
+  n9n-worker-2:
     build:
       context: .
       dockerfile: ./Dockerfile
-    container_name: n9n-worker-34
+    container_name: n9n-worker-2
     restart: unless-stopped
     env_file:
       - .env
-    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker34']
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker2']
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-34}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-2}
+
   n9n-worker-3:
     build:
       context: .
@@ -50,6 +52,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-4}
+
   n9n-worker-5:
     build:
       context: .
@@ -62,6 +65,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-5}
+
   n9n-worker-6:
     build:
       context: .
@@ -74,6 +78,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-6}
+
   n9n-worker-7:
     build:
       context: .
@@ -411,3 +416,420 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-32}
+
+  n9n-worker-33:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-33
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker33']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-33}
+
+  n9n-worker-34:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-34
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker34']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-34}
+
+  n9n-worker-35:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-35
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker35']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-35}
+
+  n9n-worker-36:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-36
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker36']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-36}
+
+  n9n-worker-37:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-37
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker37']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-37}
+
+  n9n-worker-38:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-38
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker38']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-38}
+
+  n9n-worker-39:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-39
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker39']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-39}
+
+  n9n-worker-40:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-40
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker40']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-40}
+
+  n9n-worker-41:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-41
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker41']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-41}
+
+  n9n-worker-42:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-42
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker42']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-42}
+
+  n9n-worker-43:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-43
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker43']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-43}
+
+  n9n-worker-44:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-44
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker44']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-44}
+
+  n9n-worker-45:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-45
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker45']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-45}
+
+  n9n-worker-46:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-46
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker46']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-46}
+
+  n9n-worker-47:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-47
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker47']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-47}
+
+  n9n-worker-48:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-48
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker48']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-48}
+
+  n9n-worker-49:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-49
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker49']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-49}
+
+  n9n-worker-50:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-50
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker50']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-50}
+
+  n9n-worker-51:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-51
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker51']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-51}
+
+  n9n-worker-52:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-52
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker52']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-52}
+
+  n9n-worker-53:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-53
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker53']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-53}
+
+  n9n-worker-54:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-54
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker54']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-54}
+
+  n9n-worker-55:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-55
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker55']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-55}
+
+  n9n-worker-56:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-56
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker56']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-56}
+
+  n9n-worker-57:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-57
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker57']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-57}
+
+  n9n-worker-58:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-58
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker58']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-58}
+
+  n9n-worker-59:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-59
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker59']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-59}
+
+  n9n-worker-60:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-60
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker60']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-60}
+
+  n9n-worker-61:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-61
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker61']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-61}
+
+  n9n-worker-62:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-62
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker62']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-62}
+
+  n9n-worker-63:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-63
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker63']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-63}
+
+  n9n-worker-64:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: n9n-worker-64
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker64']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX:-n9n-worker-64}
+
