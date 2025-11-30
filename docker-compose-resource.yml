@@ -8,7 +8,9 @@ services:
       - '6379:6379'
     restart: unless-stopped
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile
     container_name: rabbitmq-ephemeral
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
