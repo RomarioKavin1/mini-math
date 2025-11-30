@@ -10,9 +10,7 @@ services:
     restart: unless-stopped
 
   rabbitmq:
-    build:
-      context: ./rabbitmq
-      dockerfile: Dockerfile
+    image: heidiks/rabbitmq-delayed-message-exchange
     container_name: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
