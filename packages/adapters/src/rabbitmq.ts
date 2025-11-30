@@ -110,7 +110,10 @@ export class RabbitMQQueue<T> implements IQueue<T> {
     const buffer = Buffer.from(JSON.stringify(message))
 
     if (delayMs <= 0) {
-      await this.channel.bindQueue(this.queueName, this.delayedExchange, this.queueName)
+      await this.channel.sendToQueue(this.queueName, buffer, {
+        persistent: true,
+        messageId,
+      })
     } else {
       await this.channel.publish(this.delayedExchange, this.queueName, buffer, {
         persistent: true,
