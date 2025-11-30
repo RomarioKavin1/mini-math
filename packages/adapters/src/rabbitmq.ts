@@ -7,6 +7,7 @@ export class RabbitMQQueue<T> implements IQueue<T> {
   private connection: amqp.ChannelModel | undefined
   private channel: amqp.Channel | undefined
   private queueName: string
+  private delayQueueName: string
   private connectionUrl: string
   private inFlight: Map<string, amqp.Message> = new Map()
   private messageCallback?: (messageId: string, item: T) => Promise<void>
@@ -14,7 +15,6 @@ export class RabbitMQQueue<T> implements IQueue<T> {
   private isReconnecting = false
   private explicitClose = false
   private logger: Logger
-  private delayedExchange = 'delayed-exchange'
 
   private initialized = false
   private initPromise: Promise<void> | null = null
@@ -22,6 +22,7 @@ export class RabbitMQQueue<T> implements IQueue<T> {
   constructor(connectionUrl: string) {
     this.connectionUrl = connectionUrl
     this.queueName = 'workflow_queue'
+    this.delayQueueName = 'delay_queue'
     this.logger = makeLogger('RabbitMq')
   }
 
@@ -59,17 +60,20 @@ export class RabbitMQQueue<T> implements IQueue<T> {
 
       this.channel = await this.connection.createChannel()
 
-      await this.channel.assertExchange(this.delayedExchange, 'x-delayed-message', {
+      await this.channel.assertQueue(this.delayQueueName, {
         durable: true,
-        arguments: { 'x-delayed-type': 'direct' },
+        arguments: {
+          'x-dead-letter-exchange': '', // use default exchange
+          'x-dead-letter-routing-key': this.queueName, // send to this queue after TTL
+        },
       })
 
       await this.channel.assertQueue(this.queueName, { durable: true })
-      await this.channel.bindQueue(this.queueName, this.delayedExchange, this.queueName)
 
       await this.channel.prefetch(1) // Process one message at a time per consumer
 
       this.logger.info(`[RabbitMQ] Connected '${this.queueName}' asserted.`)
+      this.logger.info(`[RabbitMQ] Connected '${this.delayQueueName}' asserted.`)
 
       if (this.messageCallback) {
         await this.setupConsumer()
@@ -110,15 +114,17 @@ export class RabbitMQQueue<T> implements IQueue<T> {
     const buffer = Buffer.from(JSON.stringify(message))
 
     if (delayMs <= 0) {
+      // in this case, send instantly
       await this.channel.sendToQueue(this.queueName, buffer, {
         persistent: true,
         messageId,
       })
     } else {
-      await this.channel.publish(this.delayedExchange, this.queueName, buffer, {
+      // in this case, put in dead-queue
+      await this.channel.sendToQueue(this.delayQueueName, buffer, {
         persistent: true,
         messageId,
-        headers: { 'x-delay': delayMs }, // ms
+        expiration: delayMs,
       })
     }
 
