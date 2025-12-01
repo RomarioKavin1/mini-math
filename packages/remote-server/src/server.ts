@@ -76,8 +76,8 @@ export class Server {
     private domainWithPort: string,
     private siweDomain: string,
     private readonly session_secret: string,
-    private readonly secure: boolean,
     private allowedOrigins: string[],
+    private cookieOptions: session.CookieOptions,
   ) {
     this.configureMiddleware()
     this.configureRoutes()
@@ -125,12 +125,7 @@ export class Server {
         store,
         resave: false,
         saveUninitialized: false,
-        cookie: {
-          httpOnly: true,
-          sameSite: 'lax',
-          secure: this.secure,
-          maxAge: 1000 * 60 * 60 * 24,
-        },
+        cookie: this.cookieOptions,
       }),
     )
 

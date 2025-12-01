@@ -45,8 +45,8 @@ export class App {
       DOMAIN,
       SIWE_DOMAIN,
       'super-long-session-secret',
-      false,
       allowedOrigins,
+      { httpOnly: true, sameSite: 'none', secure: false, maxAge: 1000 * 60 * 60 * 24 },
     )
 
     return server.start()

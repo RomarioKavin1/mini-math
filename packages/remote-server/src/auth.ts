@@ -33,7 +33,7 @@ export function logout() {
   }
 }
 
-export function verifySiwe(EXPECTED_SIWE_DOMAIN: string) {
+export function verifySiwe(REQUESTING_DOMAIN: string) {
   return async (req: Request, res: Response) => {
     const parse = VerifyBody.safeParse(req.body)
     if (!parse.success) return res.status(400).json({ error: 'Bad body' })
@@ -50,8 +50,8 @@ export function verifySiwe(EXPECTED_SIWE_DOMAIN: string) {
     }
 
     // Check domain binding (prevents phishing)
-    if (!siwe.domain || siwe.domain !== EXPECTED_SIWE_DOMAIN) {
-      logger.warn(`APP_DOMAIN: ${EXPECTED_SIWE_DOMAIN}`)
+    if (!siwe.domain || siwe.domain !== REQUESTING_DOMAIN) {
+      logger.warn(`APP_DOMAIN: ${REQUESTING_DOMAIN}`)
       logger.warn(`siwe.domain: ${siwe.domain}`)
       // return res.status(400).json({ error: 'Domain mismatch' })
     }

@@ -45,8 +45,8 @@ const server = new Server(
   DOMAIN,
   SIWE_DOMAIN,
   'super-long-session-secret',
-  false,
   ['http://localhost:3000'],
+  { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 1000 * 60 * 60 * 24 },
 )
 
 await server.start()
