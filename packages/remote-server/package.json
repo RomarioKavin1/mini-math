@@ -42,6 +42,7 @@
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.1.0",
     "@mini-math/compiler": "^0.1.0",
+    "@mini-math/images": "^0.1.0",
     "@mini-math/keystore": "^0.1.0",
     "@mini-math/logger": "^0.1.0",
     "@mini-math/nodes": "^0.1.0",
@@ -49,6 +50,7 @@
     "@mini-math/rbac": "^0.1.0",
     "@mini-math/runtime": "^0.1.0",
     "@mini-math/secrets": "^0.1.0",
+    "@mini-math/utils": "^0.1.0",
     "@mini-math/workflow": "^0.1.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",

@@ -1,3 +1,4 @@
+import { z } from 'zod'
 export const add = (a: number, b: number) => a + b
 export const mul = (a: number, b: number) => a * b
 
@@ -18,3 +19,21 @@ export const deepClone = <T>(x: T): T => {
 // export const deepClone = <T>(x: T): T => {
 //   return JSON.parse(JSON.stringify(x))
 // }
+
+export const ListOptionsSchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.number().positive().optional(),
+})
+export type ListOptions = z.infer<typeof ListOptionsSchema>
+
+export const makeListResultSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
+  z.object({
+    items: z.array(itemSchema),
+    nextCursor: z.string().optional(),
+  })
+
+// If you want a reusable generic TS type:
+export type ListResult<T> = {
+  items: T[]
+  nextCursor?: string
+}

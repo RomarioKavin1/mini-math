@@ -3,8 +3,8 @@ import { ListOptions, ListResult, Runtime, RuntimeDef, RuntimeStore } from '@min
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { eq, sql } from 'drizzle-orm'
 
-import * as schema from './db/schema/runtime.js'
-import { runtimes } from './db/schema/runtime.js'
+import * as schema from './db/schema/3_runtime.js'
+import { runtimes } from './db/schema/3_runtime.js'
 import { makeLogger, Logger } from '@mini-math/logger'
 
 type Db = NodePgDatabase<typeof schema>

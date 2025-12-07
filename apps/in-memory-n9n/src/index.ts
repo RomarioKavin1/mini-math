@@ -5,10 +5,11 @@ import { InMemoryRuntimeStore } from '@mini-math/runtime'
 import { InMemoryWorkflowStore, WorkflowRefType } from '@mini-math/workflow'
 import { RemoteWorker } from '@mini-math/remote-worker'
 import { InMemoryKeyValueStore } from '@mini-math/keystore'
-import { InMemoryRoleStore } from '@mini-math/rbac'
+import { InMemoryRoleStore, InMemoryUserStore } from '@mini-math/rbac'
 
 import { InMemoryQueue } from '@mini-math/queue'
 import { InMemorySecretStore } from '@mini-math/secrets'
+import { InMemoryImageStore } from '@mini-math/images'
 
 const INIT_PLATFORM_OWNER = '0x29e78bB5ef59a7fa66606c665408D6E680F5a06f'
 const nodeFactory = new NodeFactory()
@@ -18,6 +19,8 @@ const runtimeStore = new InMemoryRuntimeStore()
 const sessionStore = new InMemoryKeyValueStore()
 const secretStore = new InMemorySecretStore()
 const roleStore = new InMemoryRoleStore(INIT_PLATFORM_OWNER)
+const imageStore = new InMemoryImageStore()
+const userStore = new InMemoryUserStore()
 
 for (let i = 1; i <= 10; i++) {
   const worker = new RemoteWorker(
@@ -40,6 +43,8 @@ const server = new Server(
   nodeFactory,
   roleStore,
   secretStore,
+  imageStore,
+  userStore,
   queue,
   sessionStore,
   DOMAIN,

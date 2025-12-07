@@ -2,8 +2,8 @@ import { WorkflowCore } from '@mini-math/workflow'
 import { z } from 'zod'
 import type { RouteConfig } from '@asteasolutions/zod-to-openapi'
 
-export const PROD_READY = 'Basic Workflow Operations'
-export const ONLY_DEV = 'Only dev environment and for debugging. Do not integrate with UI'
+export const VALIDATE = 'Validate'
+export const ONLY_DEV = 'Only Developer Role'
 
 export const StandardResponse = z
   .object({
@@ -23,7 +23,7 @@ export const ID = z
 
 export const validate: RouteConfig = {
   method: 'post',
-  tags: [PROD_READY],
+  tags: [VALIDATE],
   path: '/validate',
   summary: 'Validate Workflow Schema',
   request: {

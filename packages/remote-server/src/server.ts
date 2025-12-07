@@ -17,7 +17,13 @@ import {
 } from '@mini-math/workflow'
 import { NodeFactoryType } from '@mini-math/compiler'
 import { RuntimeDef, RuntimeStore } from '@mini-math/runtime'
-import { getRoleAdmin, GrantOrRevokeRoleSchema, Role, RoleStore } from '@mini-math/rbac'
+import {
+  GrantCreditDeltaSchema,
+  GrantOrRevokeRoleSchema,
+  Role,
+  RoleStore,
+  UserStore,
+} from '@mini-math/rbac'
 
 import { makeLogger } from '@mini-math/logger'
 
@@ -27,6 +33,7 @@ import {
   ID,
   openapiDoc,
   ScheduleWorkflowPayload,
+  StoreWorkflowImageSchema,
 } from './swagger/index.js'
 import {
   assignRequestId,
@@ -43,6 +50,7 @@ import {
   deleteWorkflowIfExists,
   deleteRuntimeIfExists,
   revertIfNotRightConditionForWorkflow,
+  revertIfNoMinimumStorageCredits,
 } from './middlewares/index.js'
 import { IQueue } from '@mini-math/queue'
 import { logout, verifySiwe } from './auth.js'
@@ -58,6 +66,15 @@ import {
 } from './secret.js'
 import { ensureMaxSecretsCount } from './middlewares/secret.js'
 import { handleCronJob } from './cron.js'
+import { handleStoreImage } from './image/storeImage.js'
+import { WorkflowNameSchema } from './swagger/image.js'
+import { handleImageExists } from './image/existImage.js'
+import { ImageStore } from '@mini-math/images'
+import { handleDeleteImage } from './image/deleteImage.js'
+import { ListOptionsSchema } from '@mini-math/utils'
+import { handleListImages } from './image/listImages.js'
+import { handleCountImages } from './image/countImage.js'
+import { handleGrantCredits, handleGrantRole, handleRevokeRole } from './rbac/index.js'
 
 extendZodWithOpenApi(z)
 
@@ -71,6 +88,8 @@ export class Server {
     private nodeFactory: NodeFactoryType,
     private roleStore: RoleStore,
     private secretStore: SecretStore,
+    private imageStore: ImageStore,
+    private userStore: UserStore,
     private queue: IQueue<WorkflowRefType>,
     private kvs: KeyValueStore,
     private domainWithPort: string,
@@ -115,7 +134,9 @@ export class Server {
         next()
       }
     })
-    this.app.use(express.json())
+    this.app.use(express.json({ limit: '500kb' }))
+    this.app.use(express.urlencoded({ extended: true, limit: '500kb' }))
+
     this.app.use(helmet())
 
     this.app.use(
@@ -152,12 +173,13 @@ export class Server {
   }
 
   private configureRoutes(): void {
-    const mustHaveRole = revertIfNoRole(this.roleStore)
+    const mustHaveOneOfTheRole = revertIfNoRole(this.roleStore)
+    const mustHaveMinimumStorageCredits = revertIfNoMinimumStorageCredits(this.userStore)
 
     this.app.post(
       '/run',
       requireAuth(),
-      mustHaveRole([Role.Developer]),
+      mustHaveOneOfTheRole([Role.Developer]),
       validateBody(WorkflowSchema),
       deleteWorkflowIfExists(this.workflowStore),
       deleteRuntimeIfExists(this.runtimeStore),
@@ -230,13 +252,21 @@ export class Server {
       '/grantRole',
       requireAuth(),
       validateBody(GrantOrRevokeRoleSchema),
-      this.handleGrantRole,
+      handleGrantRole(this.roleStore),
+    )
+
+    this.app.post(
+      '/grantCredits',
+      requireAuth(),
+      mustHaveOneOfTheRole([Role.PlatformOwner]),
+      validateBody(GrantCreditDeltaSchema),
+      handleGrantCredits(this.userStore),
     )
     this.app.post(
       '/revokeRole',
       requireAuth(),
       validateBody(GrantOrRevokeRoleSchema),
-      this.handleRevokeRole,
+      handleRevokeRole(this.roleStore),
     )
 
     this.app.post(
@@ -274,63 +304,45 @@ export class Server {
       handleCronJob(this.workflowStore, this.runtimeStore, this.queue, this.nodeFactory),
     )
 
-    this.app.get('/me', requireAuth(), (req, res) => {
+    this.app.post(
+      '/storeImage',
+      requireAuth(),
+      mustHaveMinimumStorageCredits(1),
+      validateBody(StoreWorkflowImageSchema),
+      handleStoreImage(this.imageStore, this.userStore),
+    )
+
+    this.app.post(
+      '/existImage',
+      requireAuth(),
+      validateBody(WorkflowNameSchema),
+      handleImageExists(this.imageStore),
+    )
+
+    this.app.post(
+      '/deleteImage',
+      requireAuth(),
+      validateBody(WorkflowNameSchema),
+      handleDeleteImage(this.imageStore),
+    )
+
+    this.app.post(
+      '/listImages',
+      requireAuth(),
+      validateBody(ListOptionsSchema),
+      handleListImages(this.imageStore),
+    )
+
+    this.app.get('/countImages', requireAuth(), handleCountImages(this.imageStore))
+
+    this.app.get('/me', requireAuth(), async (req, res) => {
       if (req?.session?.user) {
-        return res.json({ user: req.session.user })
+        const userData = await this.userStore.get(req.session.user.address)
+        return res.json({ user: req.session.user, userData })
       } else {
         return res.status(404).json({ user: null })
       }
     })
-  }
-
-  private handleGrantRole = async (req: Request, res: Response) => {
-    this.logger.trace(
-      `User: ${req.user.address} trying to grant ${req.body.role} to ${req.body.user}`,
-    )
-    const callerRoles = await this.roleStore.getRoles(req.user.address)
-    this.logger.trace(`Roles available with ${req.user.address}: ${JSON.stringify(callerRoles)}`)
-    const grantingRole = req.body.role
-    const roleAdmin = getRoleAdmin(grantingRole)
-    this.logger.trace(`${roleAdmin} is on top of role: ${grantingRole}`)
-
-    if (roleAdmin && callerRoles.includes(roleAdmin)) {
-      await this.roleStore.addRoleBySchema(req.body)
-
-      return res.status(200).json({
-        success: true,
-        message: `User: ${req.user.address} granted ${req.body.role} to ${req.body.user}`,
-      })
-    } else {
-      return res.status(401).json({
-        success: false,
-        message: `User: ${req.user.address} is not allowed to grant ${req.body.role} to ${req.body.user}`,
-      })
-    }
-  }
-
-  private handleRevokeRole = async (req: Request, res: Response) => {
-    this.logger.trace(
-      `User: ${req.user.address} trying to revoke ${req.body.role} from ${req.body.user}`,
-    )
-    const callerRoles = await this.roleStore.getRoles(req.user.address)
-    this.logger.trace(`Roles available with ${req.user.address}: ${JSON.stringify(callerRoles)}`)
-
-    const revokingRole = req.body.role
-    const roleAdmin = getRoleAdmin(revokingRole)
-    this.logger.trace(`${roleAdmin} is on top of role: ${revokingRole}`)
-
-    if (roleAdmin && callerRoles.includes(roleAdmin)) {
-      await this.roleStore.removeRoleBySchema(req.body)
-      return res.status(200).json({
-        success: true,
-        message: `User: ${req.user.address} revoked ${req.body.role} to ${req.body.user}`,
-      })
-    } else {
-      return res.status(401).json({
-        success: false,
-        message: `User: ${req.user.address} is not allowed to revoke ${req.body.role} from ${req.body.user}`,
-      })
-    }
   }
 
   // Handlers as arrow functions to preserve `this`

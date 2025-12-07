@@ -1,7 +1,7 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi'
 import { ID } from './validate.js'
 
-export const REVOKED = "This is revoked. Don't use this now"
+export const REVOKED = 'Revoked'
 
 export const clock: RouteConfig = {
   method: 'post',

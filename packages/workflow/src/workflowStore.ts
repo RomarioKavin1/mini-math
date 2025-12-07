@@ -1,3 +1,4 @@
+import { ListOptions, ListResult } from '@mini-math/utils'
 import {
   LockType,
   NextLinkedWorkflowType,
@@ -22,16 +23,6 @@ export class WorkflowStoreError extends Error {
     super(message)
     this.name = 'WorkflowStoreError'
   }
-}
-
-export interface ListOptions {
-  cursor?: string
-  limit?: number
-}
-
-export interface ListResult {
-  items: WorkflowDef[]
-  nextCursor?: string
 }
 
 export abstract class WorkflowStore {
@@ -82,7 +73,7 @@ export abstract class WorkflowStore {
     return this._delete(workflowId)
   }
 
-  public async list(options?: ListOptions): Promise<ListResult> {
+  public async list(options?: ListOptions): Promise<ListResult<WorkflowDef>> {
     await this.ensureInitialized()
     return this._list(options)
   }
@@ -161,7 +152,7 @@ export abstract class WorkflowStore {
 
   protected abstract _delete(workflowId: string): Promise<void>
 
-  protected abstract _list(options?: ListOptions): Promise<ListResult>
+  protected abstract _list(options?: ListOptions): Promise<ListResult<WorkflowDef>>
 
   protected abstract _replace(workflowId: string, def: WorkflowDef): Promise<WorkflowDef>
 }

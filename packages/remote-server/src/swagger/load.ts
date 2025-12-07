@@ -1,13 +1,16 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi'
-import { ID, PROD_READY, StandardResponse } from './validate.js'
+import { ID, StandardResponse } from './validate.js'
 import { ExpectingInputFor, WorkflowCore, WorkflowSchema } from '@mini-math/workflow'
 import z from 'zod'
 import { ExternalInputId, Input, NodeRef } from '@mini-math/nodes'
 
+export const EXECUTION = 'Requires Execution Credits'
+export const WORKFLOW = ' Workflow'
+
 export const load: RouteConfig = {
   method: 'post',
   path: '/load',
-  tags: [PROD_READY],
+  tags: [EXECUTION],
   summary: 'Load Workflow Schema into engine',
   request: {
     body: {
@@ -32,7 +35,7 @@ export const load: RouteConfig = {
 export const fetch: RouteConfig = {
   method: 'post',
   path: '/fetch',
-  tags: [PROD_READY],
+  tags: [WORKFLOW],
   summary: 'Fetch the state of workflow',
   request: {
     body: {
@@ -74,11 +77,10 @@ export const ExternalInputSchema = ID.extend({
   data: Input,
 })
 
-export const INPUT = 'Send External Input to workflow'
 export const externalInput: RouteConfig = {
   method: 'post',
   path: '/externalInput',
-  tags: [INPUT],
+  tags: [WORKFLOW],
   summary: 'Send External Input to Workflow',
   request: {
     body: {

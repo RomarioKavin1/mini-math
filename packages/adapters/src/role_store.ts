@@ -3,8 +3,8 @@ import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { eq, sql, and } from 'drizzle-orm'
 import { Pool } from 'pg'
 
-import * as schema from './db/schema/rbac.js'
-import { userRoles } from './db/schema/rbac.js'
+import * as schema from './db/schema/1_rbac.js'
+import { userRoles } from './db/schema/1_rbac.js'
 import { Logger, makeLogger } from '@mini-math/logger'
 
 type Db = NodePgDatabase<typeof schema>

@@ -1,11 +1,12 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi'
-import { ID, PROD_READY, StandardResponse } from './validate.js'
+import { ID, StandardResponse } from './validate.js'
 import z from 'zod'
 
+export const AFTER_LOADING = 'Requires workflow to be loaded'
 export const initiate: RouteConfig = {
   method: 'post',
   path: '/initiate',
-  tags: [PROD_READY],
+  tags: [AFTER_LOADING],
   summary: 'Initiate the workflow in backend. (Does not return the output of any node tough)',
   request: {
     body: {
@@ -34,7 +35,7 @@ export const ScheduleWorkflowPayload = ID.extend({
 export const schedule: RouteConfig = {
   method: 'post',
   path: '/schedule',
-  tags: [PROD_READY],
+  tags: [AFTER_LOADING],
   summary: 'schedule the workflow in backend. (Does not return the output of any node tough)',
   request: {
     body: {

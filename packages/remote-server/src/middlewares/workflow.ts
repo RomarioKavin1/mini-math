@@ -1,12 +1,11 @@
 import type { RequestHandler } from 'express'
-import type { NextLinkedWorkflowType, WorkflowDef, WorkflowRefType } from '@mini-math/workflow'
+import type { WorkflowDef } from '@mini-math/workflow'
 import type { WorkflowStore } from '@mini-math/workflow'
 import { Workflow, WorkflowStoreError } from '@mini-math/workflow'
 import { makeLogger } from '@mini-math/logger'
 import { SecretStore } from '@mini-math/secrets'
 import { RuntimeDef } from '@mini-math/runtime'
 import { NodeFactoryType } from '@mini-math/compiler'
-import { success } from 'zod'
 
 const logger = makeLogger('workflow-middlewares')
 declare module 'express-serve-static-core' {

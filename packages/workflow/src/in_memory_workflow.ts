@@ -7,14 +7,8 @@ import {
   WorkflowSchema,
   type WorkflowDef,
 } from './types.js'
-import {
-  WorkflowStore,
-  WorkflowStoreError,
-  type WorkflowStoreErrorCode,
-  type ListOptions,
-  type ListResult,
-} from './workflowStore.js'
-import { deepClone } from '@mini-math/utils'
+import { WorkflowStore, WorkflowStoreError, type WorkflowStoreErrorCode } from './workflowStore.js'
+import { deepClone, ListOptions, ListResult } from '@mini-math/utils'
 
 export class InMemoryWorkflowStore extends WorkflowStore {
   private readonly store = new Map<string, WorkflowDef>()
@@ -85,7 +79,7 @@ export class InMemoryWorkflowStore extends WorkflowStore {
     this.store.delete(workflowId)
   }
 
-  public async _list(options?: ListOptions): Promise<ListResult> {
+  public async _list(options?: ListOptions): Promise<ListResult<WorkflowDef>> {
     const limit = Math.max(1, Math.min(options?.limit ?? 50, 100))
     const all = Array.from(this.store.values()).sort((a, b) => a.id.localeCompare(b.id))
 

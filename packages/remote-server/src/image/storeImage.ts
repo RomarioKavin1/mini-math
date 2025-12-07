@@ -1,0 +1,58 @@
+import type { RequestHandler } from 'express'
+import { ImageStore } from '@mini-math/images'
+import { StoreWorkflowImageSchemaType } from 'src/swagger/image.js'
+import { UserStore } from '@mini-math/rbac'
+
+export function handleStoreImage(imageStore: ImageStore, userStore: UserStore): RequestHandler {
+  return async (req, res, next) => {
+    try {
+      const userAddress = req.user.address
+
+      const storeImagePayload = req.body as StoreWorkflowImageSchemaType
+
+      // Check if workflowName already exists for this user
+      const existingImage = await imageStore.get(userAddress, storeImagePayload.workflowName)
+      if (existingImage) {
+        return res.status(409).json({
+          success: false,
+          error: {
+            code: 'VALIDATION',
+            message: `WorkflowName: ${storeImagePayload.workflowName} already exists`,
+          },
+        })
+      }
+
+      const created = await imageStore.create(
+        userAddress,
+        storeImagePayload.workflowName,
+        storeImagePayload.core,
+      )
+
+      // If ImageStore uses a boolean return to signal "already existed" (race condition)
+      if (!created) {
+        return res.status(409).json({
+          success: false,
+          error: {
+            code: 'CONFLICT',
+            message: `WorkflowName: ${storeImagePayload.workflowName} already exists`,
+          },
+        })
+      }
+
+      const creditsUpdated = await userStore.adjustCredits(userAddress, { storageCredits: -1 })
+
+      return res.status(201).json({
+        success: true,
+        message: 'workflow-image saved successfully',
+        data: {
+          owner: userAddress,
+          workflowName: storeImagePayload.workflowName,
+          storageCreditsRemaining: creditsUpdated.storageCredits,
+        },
+      })
+    } catch (err) {
+      // If you have a global error handler, pass it along
+      return next(err)
+    }
+  }
+}

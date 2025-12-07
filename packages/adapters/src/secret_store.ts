@@ -5,8 +5,8 @@ import { Pool } from 'pg'
 import { makeLogger, Logger } from '@mini-math/logger'
 // if you have a barrel index, you can import from '../db/schema'
 // here I'll assume a dedicated file:
-import * as schema from './db/schema/secretStore.js'
-import { secretStore } from './db/schema/secretStore.js'
+import * as schema from './db/schema/2_secretStore.js'
+import { secretStore } from './db/schema/2_secretStore.js'
 
 type Db = NodePgDatabase<typeof schema>
 

@@ -10,7 +10,9 @@ import {
   PostgresRuntimeStore,
   PostgresRoleStore,
   PostgresSecretStore,
+  PostgresImageStore,
   config as adapterConfig,
+  PostgresUserStore,
 } from '@mini-math/adapters'
 
 import { config } from 'dotenv'
@@ -27,6 +29,8 @@ const roleStore = new PostgresRoleStore(
 )
 const secretStore = new PostgresSecretStore(adapterConfig.getPostgresUrl())
 const sessionStore = new RedisStore(adapterConfig.getRedisUrl())
+const imageStore = new PostgresImageStore(adapterConfig.getPostgresUrl())
+const userStore = new PostgresUserStore(adapterConfig.getPostgresUrl())
 
 export class App {
   public static async start_server(
@@ -41,6 +45,8 @@ export class App {
       nodeFactory,
       roleStore,
       secretStore,
+      imageStore,
+      userStore,
       queue,
       sessionStore,
       DOMAIN,

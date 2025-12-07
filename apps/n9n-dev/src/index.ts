@@ -11,6 +11,8 @@ import {
   PostgresRuntimeStore,
   PostgresRoleStore,
   PostgresSecretStore,
+  PostgresImageStore,
+  PostgresUserStore,
   config as adapterConfig,
 } from '@mini-math/adapters'
 
@@ -28,6 +30,8 @@ const roleStore = new PostgresRoleStore(
 )
 const sessionStore = new RedisStore(adapterConfig.getRedisUrl())
 const secretStore = new PostgresSecretStore(adapterConfig.getPostgresUrl())
+const imageStore = new PostgresImageStore(adapterConfig.getPostgresUrl())
+const userStore = new PostgresUserStore(adapterConfig.getPostgresUrl())
 
 const worker1 = new RemoteWorker(
   queue,
@@ -58,6 +62,8 @@ const server = new Server(
   nodeFactory,
   roleStore,
   secretStore,
+  imageStore,
+  userStore,
   queue,
   sessionStore,
   DOMAIN,

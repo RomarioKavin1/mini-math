@@ -6,6 +6,8 @@ import { main as main5 } from './5_schedule.js'
 import { main as main6 } from './6_input.js'
 import { main as main7 } from './7_cron.js'
 import { main as main8 } from './8_stress.js'
+import { main as main9 } from './9_images.js'
+import { main as main10 } from './10_credits.js'
 
 // This is not right way to test, but comment out tests you don't want
 async function main() {
@@ -17,6 +19,8 @@ async function main() {
   await main6()
   await main7()
   await main8()
+  await main9()
+  await main10()
 
   return 'Done'
 }

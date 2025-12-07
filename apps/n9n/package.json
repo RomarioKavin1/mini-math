@@ -14,6 +14,7 @@
   "dependencies": {
     "@mini-math/adapters": "^0.1.0",
     "@mini-math/compiler": "^0.1.0",
+    "@mini-math/images": "^0.1.0",
     "@mini-math/rbac": "^0.1.0",
     "@mini-math/remote-server": "*",
     "@mini-math/remote-worker": "*",

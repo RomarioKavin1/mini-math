@@ -1,6 +1,4 @@
 import {
-  ListOptions,
-  ListResult,
   NextLinkedWorkflowType,
   WorkflowCoreType,
   WorkflowDef,
@@ -8,11 +6,13 @@ import {
   WorkflowStore,
 } from '@mini-math/workflow'
 
+import { ListOptions, ListResult } from '@mini-math/utils'
+
 import { sql, eq } from 'drizzle-orm'
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
-import * as schema from './db/schema/workflow.js'
-import { workflows } from './db/schema/workflow.js'
+import * as schema from './db/schema/4_workflow.js'
+import { workflows } from './db/schema/4_workflow.js'
 import { makeLogger, Logger } from '@mini-math/logger'
 
 type Db = NodePgDatabase<typeof schema>
@@ -210,7 +210,7 @@ export class PostgresWorkflowstore extends WorkflowStore {
     }
   }
 
-  protected async _list(options?: ListOptions): Promise<ListResult> {
+  protected async _list(options?: ListOptions): Promise<ListResult<WorkflowDef>> {
     try {
       const limit = options?.limit ?? 50
 
@@ -236,7 +236,7 @@ export class PostgresWorkflowstore extends WorkflowStore {
       const nextOffset = offset + limit
       const nextCursor = nextOffset < total ? String(nextOffset) : undefined
 
-      const result: ListResult = {
+      const result: ListResult<WorkflowDef> = {
         items,
         nextCursor,
       }

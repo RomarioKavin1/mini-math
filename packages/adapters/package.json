@@ -41,6 +41,7 @@
     "tsup": "^8.3.0"
   },
   "dependencies": {
+    "@mini-math/images": "^0.1.0",
     "@mini-math/keystore": "^0.1.0",
     "@mini-math/logger": "^0.1.0",
     "@mini-math/nodes": "^0.1.0",
@@ -48,6 +49,7 @@
     "@mini-math/rbac": "^0.1.0",
     "@mini-math/runtime": "^0.1.0",
     "@mini-math/secrets": "^0.1.0",
+    "@mini-math/utils": "^0.1.0",
     "@mini-math/workflow": "^0.1.0",
     "amqplib": "^0.10.9",
     "drizzle-orm": "^0.44.7",

@@ -1,11 +1,11 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi'
-import { PROD_READY, StandardResponse } from './validate.js'
+import { VALIDATE, StandardResponse } from './validate.js'
 import { WorkflowCore } from '@mini-math/workflow'
 
 export const compile: RouteConfig = {
   method: 'post',
   path: '/compile',
-  tags: [PROD_READY],
+  tags: [VALIDATE],
   summary: 'Compile the workflow',
   request: {
     body: {

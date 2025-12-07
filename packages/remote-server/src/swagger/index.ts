@@ -6,14 +6,16 @@ import { externalInput, fetch, load } from './load.js'
 import { clock } from './clock.js'
 import { initiate, schedule } from './initiate.js'
 import { logout, me, nonce, verify } from './auth.js'
-import { grantRole, revokeRole } from './rbac.js'
+import { grantRole, revokeRole, grantCredits } from './rbac.js'
 import { fetchAllSecretIdentifiers, fetchSecret, removeSecret, storeSecret } from './secrets.js'
 import { cron } from './cron.js'
+import { storeImage, existImage, deleteImage, listImages, countImages } from './image.js'
 
 export { IntervalScheduleSchema, CronedWorkflowCoreSchema } from './cron.js'
 export { ExternalInputSchema } from './load.js'
 export { ID } from './validate.js'
 export { ScheduleWorkflowPayload } from './initiate.js'
+export { StoreWorkflowImageSchema } from './image.js'
 
 const registry = new OpenAPIRegistry()
 
@@ -37,6 +39,12 @@ registry.registerPath(externalInput)
 registry.registerPath(fetchSecret)
 registry.registerPath(fetchAllSecretIdentifiers)
 registry.registerPath(cron)
+registry.registerPath(storeImage)
+registry.registerPath(existImage)
+registry.registerPath(deleteImage)
+registry.registerPath(listImages)
+registry.registerPath(countImages)
+registry.registerPath(grantCredits)
 
 const generator = new OpenApiGeneratorV3(registry.definitions)
 

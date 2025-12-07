@@ -1,6 +1,8 @@
 import { RoleStore } from './roleStore.js'
 import { Role } from './roles.js'
+import { UserStore, type UserRecord, type CreditDelta } from './userStore.js'
 
+import { ListOptions, ListResult } from '@mini-math/utils'
 export class InMemoryRoleStore extends RoleStore {
   constructor(initPlatformOwner: string) {
     super()
@@ -48,5 +50,90 @@ export class InMemoryRoleStore extends RoleStore {
 
   protected async _clearRolesImpl(userId: string): Promise<void> {
     this.rolesByUser.delete(userId)
+  }
+}
+
+export class InMemoryUserStore extends UserStore {
+  private store = new Map<string, UserRecord>()
+
+  protected async initialize(): Promise<void> {
+    // nothing to do
+  }
+
+  protected async _create(
+    userId: string,
+    storageCredits: number,
+    executionCredit: number,
+  ): Promise<boolean> {
+    if (this.store.has(userId)) return false
+
+    this.store.set(userId, {
+      userId,
+      storageCredits,
+      executionCredit,
+    })
+
+    return true
+  }
+
+  protected async _get(userId: string): Promise<UserRecord | undefined> {
+    const u = this.store.get(userId)
+    return u ? { ...u } : undefined
+  }
+
+  protected async _upsert(
+    userId: string,
+    patch: Partial<Omit<UserRecord, 'userId'>>,
+  ): Promise<UserRecord> {
+    const existing = this.store.get(userId) ?? {
+      userId,
+      storageCredits: 0,
+      executionCredit: 0,
+    }
+
+    const updated: UserRecord = {
+      ...existing,
+      ...patch,
+    }
+
+    this.store.set(userId, updated)
+    return { ...updated }
+  }
+
+  protected async _adjustCredits(userId: string, delta: CreditDelta): Promise<UserRecord> {
+    const existing = this.store.get(userId) ?? {
+      userId,
+      storageCredits: 0,
+      executionCredit: 0,
+    }
+
+    const updated: UserRecord = {
+      userId,
+      storageCredits: existing.storageCredits + (delta.storageCredits ?? 0),
+      executionCredit: existing.executionCredit + (delta.executionCredit ?? 0),
+    }
+
+    this.store.set(userId, updated)
+    return { ...updated }
+  }
+
+  protected async _exists(userId: string): Promise<boolean> {
+    return this.store.has(userId)
+  }
+
+  protected async _delete(userId: string): Promise<boolean> {
+    return this.store.delete(userId)
+  }
+
+  protected async _list(options?: ListOptions): Promise<ListResult<UserRecord>> {
+    const all = Array.from(this.store.values())
+    const cursor = options?.cursor ? Number.parseInt(options.cursor, 10) || 0 : 0
+    const limit = options?.limit ?? all.length
+
+    const items = all.slice(cursor, cursor + limit).map((u) => ({ ...u }))
+    const nextIndex = cursor + limit
+    const nextCursor = nextIndex < all.length ? String(nextIndex) : undefined
+
+    return { items, nextCursor }
   }
 }

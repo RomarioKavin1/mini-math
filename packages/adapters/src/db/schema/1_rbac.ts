@@ -10,12 +10,10 @@ export const userRoles = pgTable(
     role: roleEnum('role').notNull(),
   },
   (table) => [
-    {
-      // composite primary key so the same role isn't duplicated for a user
-      pk: primaryKey({ columns: [table.userId, table.role] }),
+    // composite primary key so the same role isn't duplicated for a user
+    primaryKey({ columns: [table.userId, table.role] }),
 
-      // index to quickly find all roles for a user
-      userIdIdx: index('user_roles_user_id_idx').on(table.userId),
-    },
+    // index to quickly find all roles for a user
+    index('user_roles_user_id_idx').on(table.userId),
   ],
 )

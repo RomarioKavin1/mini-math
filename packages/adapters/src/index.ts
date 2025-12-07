@@ -4,5 +4,7 @@ export * from './workflow_store.js'
 export * from './runtime_store.js'
 export * from './role_store.js'
 export * from './secret_store.js'
+export * from './image_store.js'
+export * from './user_store.js'
 
 export * as config from './config/index.js'

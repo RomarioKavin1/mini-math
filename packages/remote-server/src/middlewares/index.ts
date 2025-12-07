@@ -3,6 +3,7 @@ export * from './runtime.js'
 export * from './workflow.js'
 export * from './auth.js'
 export * from './role.js'
+export * from './image.js'
 
 import type { RequestHandler } from 'express'
 import { v4 as uuidv4 } from 'uuid'

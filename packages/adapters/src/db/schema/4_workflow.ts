@@ -54,21 +54,19 @@ export const workflows = pgTable(
     owner: varchar('owner', { length: 255 }).notNull(),
   },
   (table) => [
-    {
-      // index on name
-      nameIdx: index('workflows_name_idx').on(table.name),
+    // index on name
+    index('workflows_name_idx').on(table.name),
 
-      // index on version
-      versionIdx: index('workflows_version_idx').on(table.version),
+    // index on version
+    index('workflows_version_idx').on(table.version),
 
-      // composite index if you’ll often filter by both name + version
-      nameVersionIdx: index('workflows_name_version_idx').on(table.name, table.version),
+    // composite index if you’ll often filter by both name + version
+    index('workflows_name_version_idx').on(table.name, table.version),
 
-      // index on owner
-      ownerIdx: index('workflows_owner_idx').on(table.owner),
+    // index on owner
+    index('workflows_owner_idx').on(table.owner),
 
-      prevLinkedIdx: index('workflows_prev_linked_idx').on(table.previousLinkedWorkflow),
-      nextLinkedIdx: index('workflows_next_linked_idx').on(table.nextLinkedWorkflow),
-    },
+    index('workflows_prev_linked_idx').on(table.previousLinkedWorkflow),
+    index('workflows_next_linked_idx').on(table.nextLinkedWorkflow),
   ],
 )

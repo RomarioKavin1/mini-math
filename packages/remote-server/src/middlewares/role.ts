@@ -1,8 +1,8 @@
-import { makeLogger } from '@mini-math/logger'
 import { Role, RoleStore } from '@mini-math/rbac'
 import type { RequestHandler } from 'express'
 import { SessionUser } from 'src/auth.js'
 
+import { makeLogger } from '@mini-math/logger'
 const logger = makeLogger('role-middlwares')
 
 declare module 'express-serve-static-core' {
