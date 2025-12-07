@@ -62,10 +62,14 @@ export async function main() {
 
   await client.post('/siwe/verify', { message: prepared, signature })
 
-  client.post('/grantCredits', {
+  const meResult = await client.get('/me')
+  console.log(meResult.data)
+
+  const grantCreditsResult = await client.post('/grantCredits', {
     storageCredits: 1,
     userId: wallet.address,
   })
+  console.log(grantCreditsResult.data)
 
   const storeWorkflowResult = await client.post('/storeImage', {
     workflowName: demoName,

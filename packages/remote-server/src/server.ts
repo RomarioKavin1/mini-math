@@ -103,14 +103,39 @@ export class Server {
   }
 
   public async start(): Promise<void> {
-    const [host, portStr] = this.domainWithPort.split(':')
-    const port = Number(portStr ?? 3000)
+    // this.domainWithPort can be either:
+    // - "localhost:1101"
+    // - "0.0.0.0:1101"
+    // - or a full URL like "http://localhost:1101"
+    let host: string
+    let port: number
 
-    await new Promise<void>((resolve) => {
-      // this.app.listen(`${this.port}`, () => resolve())
-      this.app.listen(port, host, () => resolve())
+    if (this.domainWithPort.includes('://')) {
+      // treat it as URL
+      const url = new URL(this.domainWithPort)
+      host = url.hostname
+      port = Number(url.port || 3000)
+    } else {
+      const [maybeHost, maybePort] = this.domainWithPort.split(':')
+      host = maybeHost || '0.0.0.0'
+      port = maybePort ? Number(maybePort) : 3000
+    }
+
+    if (!Number.isFinite(port) || port <= 0 || port >= 65536) {
+      throw new Error(`Invalid port in domainWithPort: "${this.domainWithPort}" → ${port}`)
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const httpServer = this.app.listen(port, host, () => {
+        this.logger.info(`API on ${host}:${port}  |  Docs: http://${host}:${port}/docs`)
+        resolve()
+      })
+
+      httpServer.on('error', (err) => {
+        this.logger.error(`Failed to start server: ${(err as Error).message}`)
+        reject(err)
+      })
     })
-    this.logger.info(`API on ${this.domainWithPort}  |  Docs: ${this.domainWithPort}/docs`)
   }
 
   private configureMiddleware(): void {
