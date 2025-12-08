@@ -1,5 +1,5 @@
 # ---- Builder stage ----
-    FROM node:24-alpine3.18 AS builder
+    FROM node:24-alpine AS builder
     WORKDIR /usr/src/app
     
     # 1. Copy only dependency manifests first
@@ -16,7 +16,7 @@
     RUN npm run build
     
     # ---- Runtime stage ----
-    FROM node:24-alpine3.18
+    FROM node:24-alpine
     WORKDIR /usr/src/app
     
     ENV NODE_ENV=production
