@@ -75,6 +75,7 @@ import { ListOptionsSchema } from '@mini-math/utils'
 import { handleListImages } from './image/listImages.js'
 import { handleCountImages } from './image/countImage.js'
 import { handleGrantCredits, handleGrantRole, handleRevokeRole } from './rbac/index.js'
+import { handleUpdateImage } from './image/updateImage.js'
 
 extendZodWithOpenApi(z)
 
@@ -361,6 +362,13 @@ export class Server {
     )
 
     this.app.get('/countImages', requireAuth(), handleCountImages(this.imageStore))
+
+    this.app.post(
+      '/updateImage',
+      requireAuth(),
+      validateBody(StoreWorkflowImageSchema),
+      handleUpdateImage(this.imageStore),
+    )
 
     this.app.get('/me', requireAuth(), async (req, res) => {
       if (req?.session?.user) {

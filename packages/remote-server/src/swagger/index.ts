@@ -9,7 +9,14 @@ import { logout, me, nonce, verify } from './auth.js'
 import { grantRole, revokeRole, grantCredits } from './rbac.js'
 import { fetchAllSecretIdentifiers, fetchSecret, removeSecret, storeSecret } from './secrets.js'
 import { cron } from './cron.js'
-import { storeImage, existImage, deleteImage, listImages, countImages } from './image.js'
+import {
+  storeImage,
+  existImage,
+  deleteImage,
+  listImages,
+  countImages,
+  updateImage,
+} from './image.js'
 
 export { IntervalScheduleSchema, CronedWorkflowCoreSchema } from './cron.js'
 export { ExternalInputSchema } from './load.js'
@@ -44,6 +51,7 @@ registry.registerPath(existImage)
 registry.registerPath(deleteImage)
 registry.registerPath(listImages)
 registry.registerPath(countImages)
+registry.registerPath(updateImage)
 registry.registerPath(grantCredits)
 
 const generator = new OpenApiGeneratorV3(registry.definitions)

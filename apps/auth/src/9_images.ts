@@ -88,6 +88,12 @@ export async function main() {
   const countImageResult = await client.get('/countImages')
   console.log(countImageResult.data)
 
+  const updateImageResult = await client.post('/updateImage', {
+    workflowName: demoName,
+    core: demo_workflow,
+  })
+  console.log(updateImageResult.data)
+
   const deleteImageResult = await client.post('/deleteImage', { workflowName: demoName })
   console.log(deleteImageResult.data)
 }

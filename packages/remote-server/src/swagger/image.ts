@@ -38,6 +38,31 @@ export const storeImage: RouteConfig = {
   security: [{ cookieAuth: [] }],
 }
 
+export const updateImage: RouteConfig = {
+  method: 'post',
+  path: '/updateImage',
+  tags: [IMAGE],
+  summary: 'Update Image',
+  request: {
+    body: {
+      content: {
+        'application/json': { schema: StoreWorkflowImageSchema },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'When Image is updated successfully',
+      content: { 'application/json': { schema: StandardResponse } },
+    },
+    400: {
+      description: 'When Image is not updated',
+      content: { 'application/json': { schema: StandardResponse } },
+    },
+  },
+  security: [{ cookieAuth: [] }],
+}
+
 export const existImage: RouteConfig = {
   method: 'post',
   path: '/existImage',
