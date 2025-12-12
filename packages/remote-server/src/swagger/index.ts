@@ -17,6 +17,13 @@ import {
   countImages,
   updateImage,
 } from './image.js'
+import {
+  createAccount,
+  getAccount,
+  getTokenBalances,
+  requestFaucet,
+  exportAccount,
+} from './cdp.js'
 
 export { IntervalScheduleSchema, CronedWorkflowCoreSchema } from './cron.js'
 export { ExternalInputSchema } from './load.js'
@@ -53,6 +60,11 @@ registry.registerPath(listImages)
 registry.registerPath(countImages)
 registry.registerPath(updateImage)
 registry.registerPath(grantCredits)
+registry.registerPath(createAccount)
+registry.registerPath(getAccount)
+registry.registerPath(getTokenBalances)
+registry.registerPath(requestFaucet)
+registry.registerPath(exportAccount)
 
 const generator = new OpenApiGeneratorV3(registry.definitions)
 

@@ -76,6 +76,7 @@ import { handleListImages } from './image/listImages.js'
 import { handleCountImages } from './image/countImage.js'
 import { handleGrantCredits, handleGrantRole, handleRevokeRole } from './rbac/index.js'
 import { handleUpdateImage } from './image/updateImage.js'
+import { createCdpRoutes } from './cdpRoutes.js'
 
 extendZodWithOpenApi(z)
 
@@ -369,6 +370,7 @@ export class Server {
       validateBody(StoreWorkflowImageSchema),
       handleUpdateImage(this.imageStore),
     )
+    this.app.use('/cdp', createCdpRoutes())
 
     this.app.get('/me', requireAuth(), async (req, res) => {
       if (req?.session?.user) {
