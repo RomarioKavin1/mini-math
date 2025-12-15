@@ -16,7 +16,7 @@ import { UserStore } from '@mini-math/rbac'
 import crypto from 'node:crypto'
 
 const WORKER_CLOCK_TIME_IN_MS = 100
-const WEBHOOK_MAX_TIMEOUT = 10_000
+const WEBHOOK_MAX_TIMEOUT = 60_000
 
 export class RemoteWorker {
   private logger: Logger
