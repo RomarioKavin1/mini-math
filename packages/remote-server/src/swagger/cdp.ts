@@ -5,10 +5,7 @@ import { ListOptionsSchema, makeListResultSchema } from '@mini-math/utils'
 import { CdpAccountNameSchema } from '@mini-math/secrets'
 
 const CDP = 'CDP'
-
-export const CreateAccountSchema = z.object({
-  accountName: z.string().describe('Name of the account to create or get'),
-})
+export const CreateAccountSchema = z.object({}).strict()
 
 export const AccountResponseSchema = z
   .object({
@@ -27,7 +24,6 @@ export const AccountCheckResponseSchema = z
   .openapi('AccountCheckResponse')
 
 export const TokenBalancesQuerySchema = z.object({
-  address: z.string().describe('Wallet address'),
   network: z.string().describe('Network name (e.g., base-sepolia)'),
   pageSize: z.number().optional().describe('Number of results per page'),
   pageToken: z.string().optional().describe('Token for pagination'),
@@ -56,7 +52,6 @@ export const TokenBalancesResponseSchema = z
   .openapi('TokenBalancesResponse')
 
 export const FaucetRequestSchema = z.object({
-  address: z.string().describe('Wallet address to fund'),
   network: z.string().default('base-sepolia').describe('Network name'),
   token: z.string().default('eth').describe('Token symbol'),
 })
@@ -70,9 +65,7 @@ export const FaucetResponseSchema = z
   })
   .openapi('FaucetResponse')
 
-export const ExportAccountSchema = z.object({
-  accountName: z.string().describe('Account name '),
-})
+export const ExportAccountSchema = z.object({}).strict()
 
 export const ExportAccountResponseSchema = z
   .object({
@@ -113,14 +106,9 @@ export const createAccount: RouteConfig = {
 
 export const getAccount: RouteConfig = {
   method: 'get',
-  path: '/cdp/account/{accountName}',
+  path: '/cdp/account',
   tags: [CDP],
-  summary: 'Get a CDP account by name',
-  request: {
-    params: z.object({
-      accountName: z.string().describe('Name of the account'),
-    }),
-  },
+  summary: 'Get the CDP account for the authenticated user',
   responses: {
     200: {
       description: 'Account retrieved successfully',
