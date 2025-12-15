@@ -12,7 +12,10 @@ import { InMemoryImageStore } from '@mini-math/images'
 
 const INIT_PLATFORM_OWNER = '0x29e78bB5ef59a7fa66606c665408D6E680F5a06f'
 const nodeFactory = new NodeFactory()
-const queue = new InMemoryQueue<WorkflowRefType>()
+const root_workflow_queue = new InMemoryQueue<WorkflowRefType>()
+const workflowPreserveTimeInMs = 60 * 1000
+const finished_workflow_queue = new InMemoryQueue<WorkflowRefType>()
+
 const workflowStore = new InMemoryWorkflowStore()
 const runtimeStore = new InMemoryRuntimeStore()
 const sessionStore = new InMemoryKeyValueStore()
@@ -24,12 +27,14 @@ const cdpAccountStore = new InMemoryCdpStore()
 
 for (let i = 1; i <= 10; i++) {
   const worker = new RemoteWorker(
-    queue,
+    root_workflow_queue,
+    finished_workflow_queue,
     workflowStore,
     runtimeStore,
     secretStore,
     userStore,
     nodeFactory,
+    workflowPreserveTimeInMs,
     `Simple Worker ${i}`,
   )
   worker.start()
@@ -46,7 +51,7 @@ const server = new Server(
   secretStore,
   imageStore,
   userStore,
-  queue,
+  root_workflow_queue,
   sessionStore,
   cdpAccountStore,
   DOMAIN,

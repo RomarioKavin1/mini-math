@@ -22,12 +22,14 @@ export class RemoteWorker {
   private workerName: string
 
   constructor(
-    private queue: IQueue<WorkflowRefType>,
+    private root_workflow_queue: IQueue<WorkflowRefType>,
+    private finished_workflow_queue: IQueue<WorkflowRefType>,
     private workflowStore: WorkflowStore,
     private runtimeStore: RuntimeStore,
     private secretStore: SecretStore,
     private userStore: UserStore,
     private nodeFactory: NodeFactoryType,
+    private workflowPreserveTimeInMs: number,
     name: string,
   ) {
     this.workerClockTime = WORKER_CLOCK_TIME_IN_MS
@@ -38,19 +40,38 @@ export class RemoteWorker {
   }
 
   private configure(): void {
-    this.queue.onMessage(async (messageId: string, wfId: WorkflowRefType) => {
+    this.root_workflow_queue.onMessage(async (messageId: string, wfId: WorkflowRefType) => {
       await this.handleMessage(messageId, wfId)
     })
+
+    this.finished_workflow_queue.onMessage(async (messageId: string, wfId: WorkflowRefType) => {
+      await this.handleCleanup(messageId, wfId)
+    })
+  }
+
+  private async handleCleanup(messageId: string, wfId: WorkflowRefType): Promise<void> {
+    try {
+      this.logger.info(`Received cleanup-message. MessageId: ${messageId}, wfId: ${wfId}`)
+      const result = await Promise.all([
+        this.workflowStore.delete(wfId),
+        this.runtimeStore.delete(wfId),
+      ])
+      this.logger.trace(JSON.stringify(result))
+      await this.finished_workflow_queue.ack(messageId)
+    } catch (error) {
+      await this.finished_workflow_queue.nack(messageId, true)
+      this.logger.error(`Worker cleanup-error: ${JSON.stringify(error)}`)
+    }
   }
 
   private async handleMessage(messageId: string, wfId: WorkflowRefType): Promise<void> {
     try {
-      this.logger.info(`Received message. MessageId: ${messageId}, wfId: ${wfId}`)
+      this.logger.info(`Received workflow-message. MessageId: ${messageId}, wfId: ${wfId}`)
 
       const lock = await this.workflowStore.acquireLock(wfId, this.workerName)
       if (!lock) {
         this.logger.trace(`Could not acquire lock on workflow ${wfId}, nacking + requeue`)
-        await this.queue.nack(messageId, true)
+        await this.root_workflow_queue.nack(messageId, true)
         return
       }
 
@@ -88,17 +109,22 @@ export class RemoteWorker {
         this.logger.error(
           `Finished / Terminated Workflow ${workflow.id()} being tried to clock. This should not occur`,
         )
+        await this.finished_workflow_queue.enqueue(workflow.id(), this.workflowPreserveTimeInMs)
         return
       }
 
       if (info.status == 'error') {
         this.logger.warn(`Workflow ${workflow.id()} encountered error while execution`)
+        this.logger.error(
+          `${workflow.id()} encountered error. Workflow will be cleanup in ${this.workflowPreserveTimeInMs} ms`,
+        )
+        await this.finished_workflow_queue.enqueue(workflow.id(), this.workflowPreserveTimeInMs)
         return
       }
 
       await this.handleInProgressWorkflow(workflow, wfId, messageId, info)
     } catch (error) {
-      await this.queue.nack(messageId, true)
+      await this.root_workflow_queue.nack(messageId, true)
       this.logger.error(`Worker error: ${JSON.stringify(error)}`)
     }
   }
@@ -126,8 +152,8 @@ export class RemoteWorker {
       this.userStore.adjustCredits(workflow.owner(), {
         executionCredits: -clockOkResult.executionInfo.creditsConsumed,
       }),
-      this.queue.enqueue(wfId, this.workerClockTime),
-      this.queue.ack(messageId),
+      this.root_workflow_queue.enqueue(wfId, this.workerClockTime),
+      this.root_workflow_queue.ack(messageId),
     ])
     this.logger.trace(JSON.stringify(result2))
   }
@@ -149,7 +175,7 @@ export class RemoteWorker {
 
     const result2 = await Promise.all([
       this.workflowStore.releaseLock(wfId),
-      this.queue.ack(messageId),
+      this.root_workflow_queue.ack(messageId),
     ])
     this.logger.trace(JSON.stringify(result2))
   }
@@ -176,12 +202,13 @@ export class RemoteWorker {
         this.logger.trace(
           `Initiating next linked workflow: ${element.id} with executionDelay: ${element.executionDelay}`,
         )
-        const enqResult = await this.queue.enqueue(element.id, element.executionDelay)
+        const enqResult = await this.root_workflow_queue.enqueue(element.id, element.executionDelay)
         this.logger.trace(enqResult)
       }
     }
 
-    await this.queue.ack(messageId)
+    await this.root_workflow_queue.ack(messageId)
+    await this.finished_workflow_queue.enqueue(workflow.id(), this.workflowPreserveTimeInMs)
   }
 
   public async start(): Promise<void> {
@@ -200,8 +227,8 @@ export class RemoteWorker {
 
         try {
           // optional: if your queue supports close / disconnect:
-          if (typeof this.queue.close === 'function') {
-            await this.queue.close()
+          if (typeof this.root_workflow_queue.close === 'function') {
+            await this.root_workflow_queue.close()
           }
         } catch (err) {
           this.logger.error('Error while closing queue', { err })

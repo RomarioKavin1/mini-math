@@ -16,17 +16,29 @@ export class RabbitMQQueue<T> implements IQueue<T> {
   private explicitClose = false
   private logger: Logger
 
-  private delayQueueBuckets: number = 10
+  private delayQueueBuckets: number
   private delayedQueueIndexes = new Map<number, string>()
 
   private initialized = false
   private initPromise: Promise<void> | null = null
 
-  constructor(connectionUrl: string) {
+  constructor(
+    connectionUrl: string,
+    mainQueueName: string,
+    delayedQueueName: string,
+    delayQueueBuckets: number,
+  ) {
     this.connectionUrl = connectionUrl
-    this.queueName = 'workflow_queue'
-    this.delayQueueIndex = 'delay_queue'
+    this.queueName = mainQueueName
+    this.delayQueueIndex = delayedQueueName
     this.logger = makeLogger('RabbitMq')
+    if (delayQueueBuckets < 1) {
+      this.delayQueueBuckets = 1
+    } else if (delayQueueBuckets > 10) {
+      this.delayQueueBuckets = 10
+    } else {
+      this.delayQueueBuckets = delayQueueBuckets
+    }
 
     for (let index = 1; index <= this.delayQueueBuckets; index++) {
       const delayQueueIndex = this.delayQueueIndex + '' + index

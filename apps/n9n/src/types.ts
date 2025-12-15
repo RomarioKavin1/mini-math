@@ -20,7 +20,21 @@ import { config } from 'dotenv'
 config()
 
 const nodeFactory = new NodeFactory()
-const queue = new RabbitMQQueue<WorkflowRefType>(adapterConfig.getRabbitMqUrl())
+const root_workflow_queue = new RabbitMQQueue<WorkflowRefType>(
+  adapterConfig.getRabbitMqUrl(),
+  'root_workflow_queue',
+  'root_delayed_queue',
+  10,
+)
+
+const finished_workflow_queue = new RabbitMQQueue<WorkflowRefType>(
+  adapterConfig.getRabbitMqUrl(),
+  'finished_workflow_queue',
+  'finished_delayed_queue',
+  1,
+)
+
+const workflowPreserveTimeInMs = 30 * 86400 * 1000
 const workflowStore = new PostgresWorkflowstore(adapterConfig.getPostgresUrl())
 const runtimeStore = new PostgresRuntimeStore(adapterConfig.getPostgresUrl())
 const roleStore = new PostgresRoleStore(
@@ -48,7 +62,7 @@ export class App {
       secretStore,
       imageStore,
       userStore,
-      queue,
+      root_workflow_queue,
       sessionStore,
       cdpAccountStore,
       DOMAIN,
@@ -69,12 +83,14 @@ export class App {
 
   public static async start_worker(workerName: string): Promise<void> {
     const worker = new RemoteWorker(
-      queue,
+      root_workflow_queue,
+      finished_workflow_queue,
       workflowStore,
       runtimeStore,
       secretStore,
       userStore,
       nodeFactory,
+      workflowPreserveTimeInMs,
       workerName,
     )
     return worker.start()

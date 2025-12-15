@@ -21,7 +21,13 @@ import { config } from 'dotenv'
 config()
 
 const nodeFactory = new NodeFactory()
-const queue = new RabbitMQQueue<WorkflowRefType>(adapterConfig.getRabbitMqUrl())
+const queue = new RabbitMQQueue<WorkflowRefType>(
+  adapterConfig.getRabbitMqUrl(),
+  'root_workflow_queue',
+  'root_delayed_queue',
+  10,
+)
+
 const workflowStore = new PostgresWorkflowstore(adapterConfig.getPostgresUrl())
 const runtimeStore = new PostgresRuntimeStore(adapterConfig.getPostgresUrl())
 const roleStore = new PostgresRoleStore(
