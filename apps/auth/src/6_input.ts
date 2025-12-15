@@ -49,6 +49,7 @@ const demo_workflow = {
   ],
   entry: '0000000000000000',
   globalState: [{ init: 'this is json' }],
+  webhookUrl: process.env.WEBHOOK_URL ?? undefined,
 }
 
 export async function main() {

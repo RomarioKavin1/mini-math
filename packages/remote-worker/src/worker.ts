@@ -144,7 +144,7 @@ export class RemoteWorker {
       await this.handleInProgressWorkflow(workflow, wfId, messageId, info)
     } catch (error) {
       await this.root_workflow_queue.nack(messageId, true)
-      this.logger.error(`Worker error: ${JSON.stringify(error)}`)
+      this.logger.error(`Worker error: ${JSON.stringify(error)} during workflow: ${wfId}`)
     }
   }
 
