@@ -1,5 +1,5 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi'
-import { CommonSchemas } from '../../schemas/index.js'
+import { CommonSchemas, AuthSchemas } from '../../schemas/index.js'
 
 const AUTH = 'Authentication'
 
@@ -11,7 +11,7 @@ const nonce: RouteConfig = {
   responses: {
     200: {
       description: 'Nonce issued',
-      content: { 'application/json': { schema: CommonSchemas.SiweNonceResponse } },
+      content: { 'application/json': { schema: AuthSchemas.SiweNonceResponse } },
     },
     429: {
       description: 'Rate limited',
@@ -28,14 +28,14 @@ const verify: RouteConfig = {
   request: {
     body: {
       content: {
-        'application/json': { schema: CommonSchemas.SiweVerifyBody },
+        'application/json': { schema: AuthSchemas.SiweVerifyBody },
       },
     },
   },
   responses: {
     200: {
       description: 'Verification success; session created',
-      content: { 'application/json': { schema: CommonSchemas.VerifyResponse } },
+      content: { 'application/json': { schema: AuthSchemas.VerifyResponse } },
     },
     400: {
       description: 'Bad request / invalid SIWE message',
@@ -61,7 +61,7 @@ const logout: RouteConfig = {
     200: {
       description: 'Logged out',
       content: {
-        'application/json': { schema: CommonSchemas.LogoutResponse },
+        'application/json': { schema: AuthSchemas.LogoutResponse },
       },
     },
   },
@@ -76,7 +76,7 @@ const me: RouteConfig = {
   responses: {
     200: {
       description: 'Returns current user or null if not logged in',
-      content: { 'application/json': { schema: CommonSchemas.MeResponse } },
+      content: { 'application/json': { schema: AuthSchemas.MeResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
