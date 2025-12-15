@@ -1,6 +1,6 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi'
 import { GrantCreditDeltaSchema, GrantOrRevokeRoleSchema } from '@mini-math/rbac'
-import { StandardResponse, ValidationError } from './validate.js'
+import { CommonSchemas } from '../../schemas/index.js'
 
 const RBAC = 'RBAC'
 
@@ -19,15 +19,15 @@ export const grantRole: RouteConfig = {
   responses: {
     200: {
       description: 'When role is successfully granted',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
     401: {
       description: 'Unauthorized/Role-not-granted',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -48,19 +48,19 @@ export const grantCredits: RouteConfig = {
   responses: {
     200: {
       description: 'When credit is successfully granted',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     403: {
       description: 'Forbidden',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -81,16 +81,18 @@ export const revokeRole: RouteConfig = {
   responses: {
     200: {
       description: 'When role is successfully revoked',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
     401: {
       description: 'When role is not revoked',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
 }
+
+export const doc: RouteConfig[] = [revokeRole, grantCredits, grantRole]

@@ -1,7 +1,9 @@
 import { Request, Response } from 'express'
 import { SiweMessage } from 'siwe'
-import z from 'zod'
 import { makeLogger } from '@mini-math/logger'
+
+import { CommonSchemas } from '../../schemas/index.js'
+
 const logger = makeLogger('auth-routes')
 
 import 'express-session'
@@ -11,11 +13,6 @@ export interface SessionUser {
   chainId: number
   loggedInAt: string
 }
-
-const VerifyBody = z.object({
-  message: z.string().min(1),
-  signature: z.string().min(1),
-})
 
 declare module 'express-session' {
   interface SessionData {
@@ -35,7 +32,7 @@ export function logout() {
 
 export function verifySiwe(REQUESTING_DOMAIN: string) {
   return async (req: Request, res: Response) => {
-    const parse = VerifyBody.safeParse(req.body)
+    const parse = CommonSchemas.VerifyBody.safeParse(req.body)
     if (!parse.success) return res.status(400).json({ error: 'Bad body' })
 
     const { message, signature } = parse.data

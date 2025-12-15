@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from 'express'
-import { requireAuth, validateBody } from '../middlewares/index.js'
+import { requireAuth, validateBody } from '../../middlewares/index.js'
 import {
   GrantCreditDeltaSchema,
   GrantOrRevokeRoleSchema,
@@ -7,7 +7,9 @@ import {
   RoleStore,
   UserStore,
 } from '@mini-math/rbac'
-import { handleGrantCredits, handleGrantRole, handleRevokeRole } from 'src/rbac/index.js'
+import { handleGrantCredits, handleGrantRole, handleRevokeRole } from '../../rbac/index.js'
+
+export { doc } from './swagger.js'
 export function create(
   mustHaveOneOfTheRole: (roles: Role[]) => RequestHandler,
   roleStore: RoleStore,

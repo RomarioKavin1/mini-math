@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { requireAuth, validateBody } from '../middlewares/index.js'
+import { requireAuth, validateBody } from '../../middlewares/index.js'
 import { ensureMaxSecretsCount } from 'src/middlewares/secret.js'
 import { BaseSecretSchema, SecretIdenfiferSchema, SecretStore } from '@mini-math/secrets'
 import {
@@ -7,7 +7,10 @@ import {
   handleFetchSecret,
   handleRemoveSecret,
   handleStoreSecret,
-} from 'src/secret.js'
+} from '../../secret.js'
+
+export { doc } from './swagger.js'
+
 export function create(secretStore: SecretStore): Router {
   const router = Router()
 

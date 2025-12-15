@@ -1,7 +1,7 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi'
 import { BaseSecretSchema, SecretDataSchema, SecretIdenfiferSchema } from '@mini-math/secrets'
-import { StandardResponse, ValidationError } from './validate.js'
 import z from 'zod'
+import { CommonSchemas } from '../../schemas/index.js'
 
 const SECRET = 'SECRET'
 
@@ -20,19 +20,19 @@ export const storeSecret: RouteConfig = {
   responses: {
     200: {
       description: 'When secret is successfully stored',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     429: {
       description: 'When max number of secrets are stored successfully',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -53,19 +53,19 @@ export const removeSecret: RouteConfig = {
   responses: {
     201: {
       description: 'When secret is successfully removed',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     200: {
       description: 'When secret is not removed',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -87,20 +87,22 @@ export const fetchSecret: RouteConfig = {
     200: {
       description: 'When secret is successfully removed',
       content: {
-        'application/json': { schema: StandardResponse.extend({ data: SecretDataSchema }) },
+        'application/json': {
+          schema: CommonSchemas.StandardResponse.extend({ data: SecretDataSchema }),
+        },
       },
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
     404: {
       description: 'When secret is not found',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -115,17 +117,26 @@ export const fetchAllSecretIdentifiers: RouteConfig = {
     200: {
       description: 'When secrets are successully found',
       content: {
-        'application/json': { schema: StandardResponse.extend({ data: z.array(z.string()) }) },
+        'application/json': {
+          schema: CommonSchemas.StandardResponse.extend({ data: z.array(z.string()) }),
+        },
       },
     },
     404: {
       description: 'When secrets identifiers are not found',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
 }
+
+export const doc: RouteConfig[] = [
+  fetchAllSecretIdentifiers,
+  fetchSecret,
+  removeSecret,
+  storeSecret,
+]

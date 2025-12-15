@@ -13,8 +13,6 @@ import { RuntimeStore } from '@mini-math/runtime'
 import { RoleStore, UserStore } from '@mini-math/rbac'
 
 import { makeLogger } from '@mini-math/logger'
-
-import { openapiDoc } from './swagger/index.js'
 import {
   attachUserIfPresent,
   revertIfNoRole,
@@ -38,6 +36,8 @@ import {
   SecretRouter,
   WorkflowRouter,
 } from './routers/index.js'
+
+import { openapiDoc } from './swagger/index.js'
 
 extendZodWithOpenApi(z)
 

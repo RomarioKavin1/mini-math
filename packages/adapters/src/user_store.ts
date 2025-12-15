@@ -1,4 +1,3 @@
-// src/postgresUserStore.ts
 import { eq, sql } from 'drizzle-orm'
 import type { ListOptions, ListResult } from '@mini-math/utils'
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres'

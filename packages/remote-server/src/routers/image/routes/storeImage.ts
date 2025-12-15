@@ -1,14 +1,14 @@
 import type { RequestHandler } from 'express'
 import { ImageStore } from '@mini-math/images'
-import { StoreWorkflowImageSchemaType } from 'src/swagger/image.js'
 import { UserStore } from '@mini-math/rbac'
+import { ImageSchemas } from '../../../schemas/index.js'
 
 export function handleStoreImage(imageStore: ImageStore, userStore: UserStore): RequestHandler {
   return async (req, res, next) => {
     try {
       const userAddress = req.user.address
 
-      const storeImagePayload = req.body as StoreWorkflowImageSchemaType
+      const storeImagePayload = req.body as ImageSchemas.StoreWorkflowImageSchemaType
 
       // Check if workflowName already exists for this user
       const existingImage = await imageStore.get(userAddress, storeImagePayload.workflowName)

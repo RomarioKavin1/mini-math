@@ -6,6 +6,8 @@ import { CdpAccountStore } from '@mini-math/secrets'
 import { ListOptions } from '@mini-math/utils'
 import { UserStore } from '@mini-math/rbac'
 
+export { doc } from './swagger.js'
+
 export function accountNameIdentifier(authenticatonAddress: string, accountName: string): string {
   authenticatonAddress = authenticatonAddress.toLowerCase()
   const hAuth = keccak256(toUtf8Bytes(authenticatonAddress.trim().toLowerCase()))

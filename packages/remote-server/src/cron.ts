@@ -7,10 +7,10 @@ import {
   WorkflowStore,
 } from '@mini-math/workflow'
 import { RequestHandler } from 'express'
-import { CronedWorkflowCoreType } from './swagger/cron.js'
 import { v4 as uuidv4 } from 'uuid'
 import { IQueue } from '@mini-math/queue'
 import { NodeFactoryType } from '@mini-math/compiler'
+import { CommonSchemas } from './schemas/index.js'
 
 export function handleCronJob(
   workflowStore: WorkflowStore,
@@ -19,7 +19,7 @@ export function handleCronJob(
   nodeFactory: NodeFactoryType,
 ): RequestHandler {
   return async (req, res) => {
-    const cronJobDescription = req.body as CronedWorkflowCoreType
+    const cronJobDescription = req.body as CommonSchemas.CronedWorkflowCoreType
     const user = req.user.address
 
     const workflowPayloads: {

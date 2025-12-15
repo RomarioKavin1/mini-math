@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { z } from 'zod'
 import { makeLogger } from '@mini-math/logger'
-import { IssueSchemaType } from 'src/swagger/validate.js'
+import { CommonSchemas } from '../schemas/index.js'
 
 const logger = makeLogger('validate-middleware')
 
@@ -18,7 +18,7 @@ export function validateBody<T extends z.ZodTypeAny>(schema: T) {
             path: issue.path.join('.'),
             message: issue.message,
             code: issue.code,
-          }) as IssueSchemaType,
+          }) as CommonSchemas.IssueSchemaType,
       )
 
       logger.error(

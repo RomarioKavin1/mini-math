@@ -1,4 +1,3 @@
-// src/main.ts
 import { NodeFactory } from '@mini-math/compiler'
 import { Server } from '@mini-math/remote-server'
 

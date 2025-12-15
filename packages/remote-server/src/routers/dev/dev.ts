@@ -1,15 +1,17 @@
 import { Router, RequestHandler } from 'express'
-import { requireAuth } from '../middlewares/auth.js'
+import { requireAuth } from '../../middlewares/auth.js'
 import { Role } from '@mini-math/rbac'
-import { validateBody } from '../middlewares/validate.js'
+import { validateBody } from '../../middlewares/validate.js'
 import { Workflow, WorkflowSchema, WorkflowStore } from '@mini-math/workflow'
-import { createNewWorkflow, deleteWorkflowIfExists } from '../middlewares/workflow.js'
-import { createNewRuntime, deleteRuntimeIfExists } from '../middlewares/runtime.js'
+import { createNewWorkflow, deleteWorkflowIfExists } from '../../middlewares/workflow.js'
+import { createNewRuntime, deleteRuntimeIfExists } from '../../middlewares/runtime.js'
 import { RuntimeStore } from '@mini-math/runtime'
 import { Logger } from '@mini-math/logger'
 import { SecretStore } from '@mini-math/secrets'
 import { NodeFactoryType } from '@mini-math/compiler'
 import { WORKFLOW_CONSTANTS } from '@mini-math/utils'
+
+export { doc } from './swagger.js'
 
 export function create(
   mustHaveOneOfTheRole: (roles: Role[]) => RequestHandler,

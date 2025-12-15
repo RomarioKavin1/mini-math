@@ -1,18 +1,8 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi'
-import { StandardResponse, ValidationError } from './validate.js'
 import { z } from 'zod'
-import { WorkflowCore } from '@mini-math/workflow'
 import { ListOptionsSchema } from '@mini-math/utils'
+import { CommonSchemas, IMAGE, ImageSchemas } from '../../schemas/index.js'
 
-export const WorkflowNameSchema = z.object({
-  workflowName: z.string().max(16),
-})
-export type WorkflowNameSchemaType = z.infer<typeof WorkflowNameSchema>
-
-export const StoreWorkflowImageSchema = WorkflowNameSchema.extend({ core: WorkflowCore })
-export type StoreWorkflowImageSchemaType = z.infer<typeof StoreWorkflowImageSchema>
-
-export const IMAGE = 'IMAGE'
 export const storeImage: RouteConfig = {
   method: 'post',
   path: '/storeImage',
@@ -21,30 +11,30 @@ export const storeImage: RouteConfig = {
   request: {
     body: {
       content: {
-        'application/json': { schema: StoreWorkflowImageSchema },
+        'application/json': { schema: ImageSchemas.StoreWorkflowImageSchema },
       },
     },
   },
   responses: {
     201: {
       description: 'When Image is stored successfully',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
     404: {
       description: 'When Image is not stored',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     409: {
       description: 'Image name already exists',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -58,26 +48,26 @@ export const updateImage: RouteConfig = {
   request: {
     body: {
       content: {
-        'application/json': { schema: StoreWorkflowImageSchema },
+        'application/json': { schema: ImageSchemas.StoreWorkflowImageSchema },
       },
     },
   },
   responses: {
     201: {
       description: 'When Image is updated successfully',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     403: {
       description: 'When Image is not updated',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -91,22 +81,22 @@ export const existImage: RouteConfig = {
   request: {
     body: {
       content: {
-        'application/json': { schema: WorkflowNameSchema },
+        'application/json': { schema: ImageSchemas.WorkflowNameSchema },
       },
     },
   },
   responses: {
     200: {
       description: 'Status of the image',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -120,7 +110,7 @@ export const deleteImage: RouteConfig = {
   request: {
     body: {
       content: {
-        'application/json': { schema: WorkflowNameSchema },
+        'application/json': { schema: ImageSchemas.WorkflowNameSchema },
       },
     },
   },
@@ -129,7 +119,7 @@ export const deleteImage: RouteConfig = {
       description: 'When image is deleted properly',
       content: {
         'application/json': {
-          schema: StandardResponse.extend({
+          schema: CommonSchemas.StandardResponse.extend({
             data: z.string().openapi('Name of workflow that has been deleted'),
           }),
         },
@@ -137,11 +127,11 @@ export const deleteImage: RouteConfig = {
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
       description: 'Validation Error',
-      content: { 'application/json': { schema: ValidationError } },
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -162,7 +152,7 @@ export const listImages: RouteConfig = {
   responses: {
     200: {
       description: 'Status of the image',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
@@ -176,12 +166,23 @@ export const countImages: RouteConfig = {
   responses: {
     200: {
       description: 'Status of the image',
-      content: { 'application/json': { schema: StandardResponse.extend({ data: z.number() }) } },
+      content: {
+        'application/json': { schema: CommonSchemas.StandardResponse.extend({ data: z.number() }) },
+      },
     },
     401: {
       description: 'Unauthorized',
-      content: { 'application/json': { schema: StandardResponse } },
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
   },
   security: [{ cookieAuth: [] }],
 }
+
+export const doc: RouteConfig[] = [
+  countImages,
+  listImages,
+  deleteImage,
+  existImage,
+  updateImage,
+  storeImage,
+]

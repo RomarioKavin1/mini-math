@@ -1,9 +1,8 @@
 import { RequestHandler, Router } from 'express'
-import { requireAuth, validateBody } from '../middlewares/index.js'
-import { StoreWorkflowImageSchema } from '../swagger/index.js'
+import { requireAuth, validateBody } from '../../middlewares/index.js'
 import { ImageStore } from '@mini-math/images'
 import { UserStore } from '@mini-math/rbac'
-import { WorkflowNameSchema } from '../swagger/image.js'
+
 import {
   handleCountImages,
   handleDeleteImage,
@@ -11,8 +10,12 @@ import {
   handleListImages,
   handleStoreImage,
   handleUpdateImage,
-} from '../image/index.js'
+} from './routes/index.js'
 import { ListOptionsSchema } from '@mini-math/utils'
+import { ImageSchemas } from '../../schemas/index.js'
+
+export { doc } from './swagger.js'
+
 export function create(
   mustHaveMinimumStorageCredits: (minCredits: number) => RequestHandler,
   imageStore: ImageStore,
@@ -24,21 +27,21 @@ export function create(
     '/storeImage',
     requireAuth(),
     mustHaveMinimumStorageCredits(1),
-    validateBody(StoreWorkflowImageSchema),
+    validateBody(ImageSchemas.StoreWorkflowImageSchema),
     handleStoreImage(imageStore, userStore),
   )
 
   router.post(
     '/existImage',
     requireAuth(),
-    validateBody(WorkflowNameSchema),
+    validateBody(ImageSchemas.WorkflowNameSchema),
     handleImageExists(imageStore),
   )
 
   router.post(
     '/deleteImage',
     requireAuth(),
-    validateBody(WorkflowNameSchema),
+    validateBody(ImageSchemas.WorkflowNameSchema),
     handleDeleteImage(imageStore),
   )
 
@@ -54,7 +57,7 @@ export function create(
   router.post(
     '/updateImage',
     requireAuth(),
-    validateBody(StoreWorkflowImageSchema),
+    validateBody(ImageSchemas.StoreWorkflowImageSchema),
     handleUpdateImage(imageStore),
   )
 

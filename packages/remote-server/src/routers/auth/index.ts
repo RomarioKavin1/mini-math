@@ -3,6 +3,8 @@ import { logout, verifySiwe } from './auth.js'
 import { getNonce, requireAuth } from '../../middlewares/auth.js'
 import { UserStore } from '@mini-math/rbac'
 
+export { doc } from './swagger.js'
+
 export function create(userStore: UserStore, siweDomain: string): Router {
   const router = Router()
 

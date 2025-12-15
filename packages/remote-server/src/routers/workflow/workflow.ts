@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { validateBody } from '../middlewares/validate.js'
+import { validateBody } from '../../middlewares/validate.js'
 import {
   Workflow,
   WorkflowCore,
@@ -17,19 +17,17 @@ import {
   revertIfNotRightConditionForWorkflow,
   revertIfNotWorkflowOwner,
   revertIfNoWorkflow,
-} from '../middlewares/index.js'
+} from '../../middlewares/index.js'
 import { RuntimeDef, RuntimeStore } from '@mini-math/runtime'
 import { Logger } from '@mini-math/logger'
-import {
-  CronedWorkflowCoreSchema,
-  ExternalInputSchema,
-  ID,
-  ScheduleWorkflowPayload,
-} from '../swagger/index.js'
+
 import { SecretStore } from '@mini-math/secrets'
 import { IQueue } from '@mini-math/queue'
 import z from 'zod'
-import { handleCronJob } from 'src/cron.js'
+import { handleCronJob } from '../..//cron.js'
+import { CommonSchemas } from '../../schemas/index.js'
+
+export { doc } from './swagger.js'
 
 export function create(
   nodeFactory: NodeFactoryType,
@@ -65,7 +63,7 @@ export function create(
 
     const expectingInputFor = workflow.expectingInputFor()
     if (expectingInputFor) {
-      const inputFromUser = req.body as z.infer<typeof ExternalInputSchema>
+      const inputFromUser = req.body as z.infer<typeof CommonSchemas.ExternalInputSchema>
       if (expectingInputFor.node != inputFromUser.nodeId) {
         return res.status(400).json({
           status: false,
@@ -161,7 +159,7 @@ export function create(
   router.post(
     '/initiate',
     requireAuth(),
-    validateBody(ID),
+    validateBody(CommonSchemas.ID),
     revertIfNotWorkflowOwner(workflowStore),
     revertIfNoWorkflow(workflowStore),
     revertIfNoRuntime(runtimeStore),
@@ -172,7 +170,7 @@ export function create(
   router.post(
     '/schedule',
     requireAuth(),
-    validateBody(ScheduleWorkflowPayload),
+    validateBody(CommonSchemas.ScheduleWorkflowPayload),
     revertIfNotWorkflowOwner(workflowStore),
     revertIfNoWorkflow(workflowStore),
     revertIfNoRuntime(runtimeStore),
@@ -183,7 +181,7 @@ export function create(
   router.post(
     '/externalInput',
     requireAuth(),
-    validateBody(ExternalInputSchema),
+    validateBody(CommonSchemas.ExternalInputSchema),
     revertIfNotWorkflowOwner(workflowStore),
     revertIfNoWorkflow(workflowStore),
     revertIfNoRuntime(runtimeStore),
@@ -193,7 +191,7 @@ export function create(
   router.post(
     '/fetch',
     requireAuth(),
-    validateBody(ID),
+    validateBody(CommonSchemas.ID),
     revertIfNotWorkflowOwner(workflowStore),
     revertIfNoWorkflow(workflowStore),
     revertIfNoRuntime(runtimeStore),
@@ -203,7 +201,7 @@ export function create(
   router.post(
     '/cron',
     requireAuth(),
-    validateBody(CronedWorkflowCoreSchema),
+    validateBody(CommonSchemas.CronedWorkflowCoreSchema),
     handleCronJob(workflowStore, runtimeStore, queue, nodeFactory),
   )
 
