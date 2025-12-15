@@ -94,6 +94,10 @@ export class Workflow implements WorkflowGlobalState {
     return this.workflowDef.owner
   }
 
+  public webhookUrl(): string | undefined {
+    return this.workflowDef.webhookUrl
+  }
+
   public getGlobalState<T = unknown>(): T | undefined {
     return this.workflowDef.globalState === undefined
       ? undefined

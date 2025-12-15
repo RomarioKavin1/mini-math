@@ -28,6 +28,7 @@ export const workflows = pgTable(
     globalState: jsonb('global_state')
       .$type<unknown | null>()
       .default(sql`null`),
+    webhookUrl: text('webhook_url'),
 
     // lock: optional JSONB blob that matches LockType
     lock: jsonb('lock')

@@ -40,13 +40,15 @@ program
   .command('start-worker')
   .description('Start a background worker')
   .requiredOption('--name <name>', 'Worker name')
-  .action(async (opts: { name: string }) => {
-    const { name } = opts
+  .requiredOption('--webhook-secret <webhookSecret>', 'Webhook Secret')
+  .requiredOption('--webhook-timeout-in-ms <webhookTimeoutInMs>', 'Webhook Timeout in ms')
+  .action(async (opts: { name: string; webhookSecret: string; webhookTimeoutInMs: string }) => {
+    const { name, webhookSecret, webhookTimeoutInMs } = opts
 
     // TODO: your real logic here
     console.log(`Starting worker with name: ${name}`)
 
-    await App.start_worker(name)
+    await App.start_worker(name, webhookSecret, parseInt(webhookTimeoutInMs))
   })
 
 const maybeCommand = process.argv[2]

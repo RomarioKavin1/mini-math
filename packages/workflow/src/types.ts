@@ -9,6 +9,7 @@ import {
   ExternalInputData,
 } from '@mini-math/nodes'
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
+import { WebhookUrl } from './webhook.js'
 extendZodWithOpenApi(z)
 
 export const WorkflowRef = z.string().min(16)
@@ -25,6 +26,10 @@ export const WorkflowCore = z
     edges: z.array(EdgeDef).openapi('Internode connections'),
     entry: NodeRef,
     globalState: z.unknown().optional(),
+    webhookUrl: WebhookUrl.optional().openapi({
+      description: 'Public HTTPS endpoint to receive webhook POSTs',
+      example: 'https://hooks.example.com/my-platform/webhooks',
+    }),
   })
   .openapi('WorkflowCore')
 

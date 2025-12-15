@@ -13,7 +13,10 @@ import { v4 } from 'uuid'
 import { NodeFactoryType } from '@mini-math/compiler'
 import { UserStore } from '@mini-math/rbac'
 
+import crypto from 'node:crypto'
+
 const WORKER_CLOCK_TIME_IN_MS = 100
+const WEBHOOK_MAX_TIMEOUT = 10_000
 
 export class RemoteWorker {
   private logger: Logger
@@ -30,11 +33,17 @@ export class RemoteWorker {
     private userStore: UserStore,
     private nodeFactory: NodeFactoryType,
     private workflowPreserveTimeInMs: number,
+    private webhookSecret: string,
+    private webhookTimeoutInMs: number,
     name: string,
   ) {
     this.workerClockTime = WORKER_CLOCK_TIME_IN_MS
     this.workerId = v4()
     this.logger = makeLogger('Remote Worker', { workerId: this.workerId, workerName: name })
+
+    if (this.webhookTimeoutInMs > WEBHOOK_MAX_TIMEOUT) {
+      this.webhookTimeoutInMs = WEBHOOK_MAX_TIMEOUT
+    }
     this.workerName = name
     this.configure()
   }
@@ -102,6 +111,16 @@ export class RemoteWorker {
 
       if (info.status == 'insufficient_credit') {
         this.logger.debug(`User found with insufficient credits: ${workflow.owner()}`)
+        const webhookUrl = workflow.webhookUrl()
+        if (webhookUrl) {
+          await this.sendWebhook(workflow.id(), {
+            url: webhookUrl,
+            eventType: 'insufficient_credit',
+            payload: { wfId: workflow.id() },
+            secret: this.webhookSecret,
+            timeoutMs: this.webhookTimeoutInMs,
+          })
+        }
         return
       }
 
@@ -114,8 +133,8 @@ export class RemoteWorker {
       }
 
       if (info.status == 'error') {
-        this.logger.warn(`Workflow ${workflow.id()} encountered error while execution`)
-        this.logger.error(
+        this.logger.debug(`Workflow ${workflow.id()} encountered error while execution`)
+        this.logger.debug(
           `${workflow.id()} encountered error. Workflow will be cleanup in ${this.workflowPreserveTimeInMs} ms`,
         )
         await this.finished_workflow_queue.enqueue(workflow.id(), this.workflowPreserveTimeInMs)
@@ -178,6 +197,17 @@ export class RemoteWorker {
       this.root_workflow_queue.ack(messageId),
     ])
     this.logger.trace(JSON.stringify(result2))
+
+    const webhookUrl = workflow.webhookUrl()
+    if (webhookUrl) {
+      await this.sendWebhook(workflow.id(), {
+        url: webhookUrl,
+        eventType: 'awaiting-input',
+        payload: { wfId: workflow.id(), info },
+        secret: this.webhookSecret,
+        timeoutMs: this.webhookTimeoutInMs,
+      })
+    }
   }
 
   private async handleFinishedWorkflow(
@@ -209,6 +239,68 @@ export class RemoteWorker {
 
     await this.root_workflow_queue.ack(messageId)
     await this.finished_workflow_queue.enqueue(workflow.id(), this.workflowPreserveTimeInMs)
+
+    const webhookUrl = workflow.webhookUrl()
+    if (webhookUrl) {
+      await this.sendWebhook(workflow.id(), {
+        url: webhookUrl,
+        eventType: 'finished',
+        payload: { wfId: workflow.id() },
+        secret: this.webhookSecret,
+        timeoutMs: this.webhookTimeoutInMs,
+      })
+    }
+  }
+
+  private async sendWebhook(
+    wfId: string,
+    params: {
+      url: string
+      eventType: string
+      payload: unknown
+      secret: string // your per-endpoint signing secret
+      timeoutMs?: number
+    },
+  ): Promise<{ ok: boolean; status: number; bodyText: string }> {
+    const { url, eventType, payload, secret, timeoutMs = 10_000 } = params
+
+    const body = JSON.stringify({
+      id: crypto.randomUUID(),
+      type: eventType,
+      createdAt: new Date().toISOString(),
+      data: payload,
+    })
+
+    const timestamp = Math.floor(Date.now() / 1000).toString()
+    const signature = crypto
+      .createHmac('sha256', secret)
+      .update(`${timestamp}.${body}`)
+      .digest('hex')
+
+    const controller = new AbortController()
+    const t = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'mini-math-webhooks/1.0',
+          'X-Webhook-Timestamp': timestamp,
+          'X-Webhook-Signature': `sha256=${signature}`,
+        },
+        body,
+        signal: controller.signal,
+      })
+
+      const bodyText = await res.text().catch(() => '')
+      const result = { ok: res.ok, status: res.status, bodyText }
+      this.logger.debug('Webhook response')
+      this.logger.debug(`Workflow Webhook ${wfId} Response:` + JSON.stringify(result))
+      return result
+    } finally {
+      clearTimeout(t)
+    }
   }
 
   public async start(): Promise<void> {

@@ -28,6 +28,11 @@ if [ "$END" -lt "$START" ]; then
   exit 1
 fi
 
+# Require these to exist (from your shell env or .env when docker-compose runs)
+# This makes missing config obvious at generation time.
+: "${WEBHOOK_SECRET:?WEBHOOK_SECRET is required (set in .env or environment)}"
+: "${WEBHOOK_TIMEOUT_IN_MS:?WEBHOOK_TIMEOUT_IN_MS is required (set in .env or environment)}"
+
 echo "version: '3.9'"
 echo
 echo "services:"
@@ -43,7 +48,16 @@ while [ "$i" -le "$END" ]; do
     restart: unless-stopped
     env_file:
       - .env
-    command: ['node', 'apps/n9n/dist/index.js', 'start-worker', '--name', 'worker$i']
+    command:
+      - node
+      - apps/n9n/dist/index.js
+      - start-worker
+      - --name
+      - worker$i
+      - --webhook-secret
+      - \${WEBHOOK_SECRET}
+      - --webhook-timeout-in-ms
+      - "\${WEBHOOK_TIMEOUT_IN_MS}"
     environment:
       NODE_ENV: \${NODE_ENV:-production}
       ELASTICSEARCH_INDEX: \${ELASTICSEARCH_INDEX:-n9n-worker-$i}

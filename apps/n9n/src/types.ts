@@ -81,7 +81,11 @@ export class App {
     return server.start()
   }
 
-  public static async start_worker(workerName: string): Promise<void> {
+  public static async start_worker(
+    workerName: string,
+    webhookSecret: string,
+    webhookTimeoutInMs: number,
+  ): Promise<void> {
     const worker = new RemoteWorker(
       root_workflow_queue,
       finished_workflow_queue,
@@ -91,6 +95,8 @@ export class App {
       userStore,
       nodeFactory,
       workflowPreserveTimeInMs,
+      webhookSecret,
+      webhookTimeoutInMs,
       workerName,
     )
     return worker.start()

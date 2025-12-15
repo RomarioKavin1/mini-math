@@ -35,6 +35,8 @@ for (let i = 1; i <= 10; i++) {
     userStore,
     nodeFactory,
     workflowPreserveTimeInMs,
+    'webhook-secret',
+    10_000,
     `Simple Worker ${i}`,
   )
   worker.start()

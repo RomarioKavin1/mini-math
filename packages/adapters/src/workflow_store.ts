@@ -163,6 +163,10 @@ export class PostgresWorkflowstore extends WorkflowStore {
           patch.nextLinkedWorkflow === undefined ? null : patch.nextLinkedWorkflow
       }
 
+      if ('webhookUrl' in patch) {
+        update.webhookUrl = patch.webhookUrl === undefined ? undefined : (patch.webhookUrl ?? null)
+      }
+
       if (Object.keys(update).length === 0) {
         // nothing to update, just return the current value
         return this._get(workflowId)
@@ -317,6 +321,7 @@ function coreToInsert(
     edges: core.edges,
     entry: core.entry,
     globalState: core.globalState === undefined ? null : (core.globalState as unknown),
+    webhookUrl: core.webhookUrl ?? null,
     previousLinkedWorkflow: options?.previousLinkedWorkflow ?? null,
     nextLinkedWorkflow: options?.nextLinkedWorkflow ?? null,
   }
@@ -334,6 +339,8 @@ function rowToDef(row: WorkflowRow): WorkflowDef {
     entry: row.entry,
     globalState:
       row.globalState === null || row.globalState === undefined ? undefined : row.globalState,
+    webhookUrl:
+      row.webhookUrl === null || row.webhookUrl === undefined ? undefined : row.webhookUrl,
 
     lock: row.lock === null || row.lock === undefined ? undefined : row.lock,
 
