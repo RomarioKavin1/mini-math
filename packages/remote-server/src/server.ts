@@ -36,6 +36,7 @@ import {
   ImageRouter,
   RbacRouter,
   SecretRouter,
+  TokenRouter,
   WorkflowRouter,
 } from './routers/index.js'
 
@@ -199,5 +200,6 @@ export class Server {
 
     this.app.use(SecretRouter.create(this.secretStore))
     this.app.use(ImageRouter.create(mustHaveMinimumStorageCredits, this.imageStore, this.userStore))
+    this.app.use(TokenRouter.create())
   }
 }
