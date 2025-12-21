@@ -14,6 +14,7 @@ import {
   PostgresUserStore,
   config as adapterConfig,
   PostgresCdpAccountStore,
+  PostgresBatchStore,
 } from '@mini-math/adapters'
 
 import { config } from 'dotenv'
@@ -39,6 +40,7 @@ const secretStore = new PostgresSecretStore(adapterConfig.getPostgresUrl())
 const imageStore = new PostgresImageStore(adapterConfig.getPostgresUrl())
 const userStore = new PostgresUserStore(adapterConfig.getPostgresUrl())
 const cdpAccountStore = new PostgresCdpAccountStore(adapterConfig.getPostgresUrl())
+const batchStore = new PostgresBatchStore(adapterConfig.getPostgresUrl())
 
 // const worker1 = new RemoteWorker(
 //   queue,
@@ -75,6 +77,7 @@ const server = new Server(
   queue,
   sessionStore,
   cdpAccountStore,
+  batchStore,
   DOMAIN,
   SIWE_DOMAIN,
   { session: 'super-long-session-secret', etherscanApikey: ETHERSCAN_APIKEY },

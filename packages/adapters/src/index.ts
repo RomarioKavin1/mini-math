@@ -7,5 +7,6 @@ export * from './secret_store.js'
 export * from './image_store.js'
 export * from './user_store.js'
 export * from './cdp_account_store.js'
+export * from './batch_store.js'
 
 export * as config from './config/index.js'

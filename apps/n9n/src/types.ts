@@ -13,6 +13,7 @@ import {
   config as adapterConfig,
   PostgresUserStore,
   PostgresCdpAccountStore,
+  PostgresBatchStore,
 } from '@mini-math/adapters'
 
 import { config } from 'dotenv'
@@ -46,6 +47,7 @@ const sessionStore = new RedisStore(adapterConfig.getRedisUrl())
 const imageStore = new PostgresImageStore(adapterConfig.getPostgresUrl())
 const userStore = new PostgresUserStore(adapterConfig.getPostgresUrl())
 const cdpAccountStore = new PostgresCdpAccountStore(adapterConfig.getPostgresUrl())
+const batchStore = new PostgresBatchStore(adapterConfig.getPostgresUrl())
 
 export class App {
   public static async start_server(
@@ -66,6 +68,7 @@ export class App {
       root_workflow_queue,
       sessionStore,
       cdpAccountStore,
+      batchStore,
       DOMAIN,
       SIWE_DOMAIN,
       { session: 'super-long-session-secret', etherscanApikey },

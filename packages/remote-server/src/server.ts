@@ -7,7 +7,7 @@ import swaggerUi from 'swagger-ui-express'
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 import cors from 'cors'
 
-import { WorkflowStore, WorkflowRefType } from '@mini-math/workflow'
+import { WorkflowStore, WorkflowRefType, BatchStore } from '@mini-math/workflow'
 import { NodeFactoryType } from '@mini-math/compiler'
 import { RuntimeStore } from '@mini-math/runtime'
 import { RoleStore, UserStore } from '@mini-math/rbac'
@@ -36,6 +36,7 @@ import {
   SecretRouter,
   WorkflowRouter,
   FeHelperRouter,
+  BatchJobRouter,
 } from './routers/index.js'
 
 import { openapiDoc } from './swagger/index.js'
@@ -57,6 +58,7 @@ export class Server {
     private queue: IQueue<WorkflowRefType>,
     private kvs: KeyValueStore,
     private cdpAccountStore: CdpAccountStore,
+    private batchStore: BatchStore,
     private domainWithPort: string,
     private siweDomain: string,
     private readonly secrets: { session: string; etherscanApikey: string },
@@ -205,5 +207,6 @@ export class Server {
 
     this.app.use(SecretRouter.create(this.secretStore))
     this.app.use(ImageRouter.create(mustHaveMinimumStorageCredits, this.imageStore, this.userStore))
+    this.app.use(BatchJobRouter.basePath, BatchJobRouter.create(this.batchStore, this.logger))
   }
 }

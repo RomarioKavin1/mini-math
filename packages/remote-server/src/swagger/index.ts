@@ -9,6 +9,7 @@ import {
   SecretRouter,
   WorkflowRouter,
   FeHelperRouter,
+  BatchJobRouter,
 } from '../routers/index.js'
 
 const registry = new OpenAPIRegistry()
@@ -22,6 +23,7 @@ const allDocs: RouteConfig[] = [
   ...SecretRouter.doc,
   ...WorkflowRouter.doc,
   ...FeHelperRouter.doc,
+  ...BatchJobRouter.doc,
 ]
 
 for (let index = 0; index < allDocs.length; index++) {

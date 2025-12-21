@@ -1,7 +1,7 @@
 import { NodeFactory } from '@mini-math/compiler'
 import { Server } from '@mini-math/remote-server'
 import { InMemoryRuntimeStore } from '@mini-math/runtime'
-import { InMemoryWorkflowStore, WorkflowRefType } from '@mini-math/workflow'
+import { InMemoryWorkflowStore, WorkflowRefType, InMemoryBatchStore } from '@mini-math/workflow'
 import { RemoteWorker } from '@mini-math/remote-worker'
 import { InMemoryKeyValueStore } from '@mini-math/keystore'
 import { InMemoryRoleStore, InMemoryUserStore } from '@mini-math/rbac'
@@ -24,6 +24,7 @@ const roleStore = new InMemoryRoleStore(INIT_PLATFORM_OWNER)
 const imageStore = new InMemoryImageStore()
 const userStore = new InMemoryUserStore()
 const cdpAccountStore = new InMemoryCdpStore()
+const batchStore = new InMemoryBatchStore(workflowStore)
 
 for (let i = 1; i <= 10; i++) {
   const worker = new RemoteWorker(
@@ -57,6 +58,7 @@ const server = new Server(
   root_workflow_queue,
   sessionStore,
   cdpAccountStore,
+  batchStore,
   DOMAIN,
   SIWE_DOMAIN,
   { session: 'super-long-session-secret', etherscanApikey: ETHERSCAN_APIKEY },
