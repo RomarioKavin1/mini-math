@@ -4,9 +4,11 @@ import { CdpAccountNameSchema } from '@mini-math/secrets'
 import { CommonSchemas, CDP, CdpSchemas } from '../../schemas/index.js'
 import z from 'zod'
 
+export const basePath = '/cdp'
+
 const createAccount: RouteConfig = {
   method: 'post',
-  path: '/cdp/account',
+  path: `${basePath}/account`,
   tags: [CDP],
   summary: 'Create or get a CDP account',
   request: {
@@ -37,7 +39,7 @@ const createAccount: RouteConfig = {
 
 const getAccount: RouteConfig = {
   method: 'get',
-  path: '/cdp/account/{accountName}',
+  path: `${basePath}/account/{accountName}`,
   tags: [CDP],
   summary: 'Get a CDP account by name',
   request: {
@@ -60,7 +62,7 @@ const getAccount: RouteConfig = {
 
 const getTokenBalances: RouteConfig = {
   method: 'get',
-  path: '/cdp/token-balances',
+  path: `${basePath}/token-balances`,
   tags: [CDP],
   summary: 'Get token balances for an address',
   request: {
@@ -87,7 +89,7 @@ const getTokenBalances: RouteConfig = {
 
 const requestFaucet: RouteConfig = {
   method: 'post',
-  path: '/cdp/faucet',
+  path: `${basePath}/faucet`,
   tags: [CDP],
   summary: 'Request faucet tokens',
   request: {
@@ -118,7 +120,7 @@ const requestFaucet: RouteConfig = {
 
 const exportAccount: RouteConfig = {
   method: 'post',
-  path: '/cdp/export-account',
+  path: `${basePath}/export-account`,
   tags: [CDP],
   summary: 'Export account private key',
   request: {
@@ -149,7 +151,7 @@ const exportAccount: RouteConfig = {
 
 const fetchAccountNames: RouteConfig = {
   method: 'post',
-  path: '/cdp/fetchAccountNames',
+  path: `${basePath}/fetchAccountNames`,
   tags: [CDP],
   summary: 'List the cdp account names',
   request: {

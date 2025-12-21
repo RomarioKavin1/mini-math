@@ -6,7 +6,7 @@ import { CdpAccountStore } from '@mini-math/secrets'
 import { ListOptions } from '@mini-math/utils'
 import { UserStore } from '@mini-math/rbac'
 
-export { doc } from './swagger.js'
+export { doc, basePath } from './swagger.js'
 
 export function accountNameIdentifier(authenticatonAddress: string, accountName: string): string {
   authenticatonAddress = authenticatonAddress.toLowerCase()

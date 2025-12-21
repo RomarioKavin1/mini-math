@@ -8,6 +8,7 @@ import {
   RbacRouter,
   SecretRouter,
   WorkflowRouter,
+  FeHelperRouter,
 } from '../routers/index.js'
 
 const registry = new OpenAPIRegistry()
@@ -20,6 +21,7 @@ const allDocs: RouteConfig[] = [
   ...RbacRouter.doc,
   ...SecretRouter.doc,
   ...WorkflowRouter.doc,
+  ...FeHelperRouter.doc,
 ]
 
 for (let index = 0; index < allDocs.length; index++) {

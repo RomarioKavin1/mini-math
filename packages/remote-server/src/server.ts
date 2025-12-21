@@ -35,6 +35,7 @@ import {
   RbacRouter,
   SecretRouter,
   WorkflowRouter,
+  FeHelperRouter,
 } from './routers/index.js'
 
 import { openapiDoc } from './swagger/index.js'
@@ -193,9 +194,11 @@ export class Server {
 
     this.app.use(RbacRouter.create(mustHaveOneOfTheRole, this.roleStore, this.userStore))
     this.app.use(
-      '/cdp',
+      CdpRouter.basePath,
       CdpRouter.create(this.cdpAccountStore, this.userStore, mustHaveMinCdpAccountCredits),
     )
+
+    this.app.use(FeHelperRouter.basePath, FeHelperRouter.create(this.logger))
 
     this.app.use(SecretRouter.create(this.secretStore))
     this.app.use(ImageRouter.create(mustHaveMinimumStorageCredits, this.imageStore, this.userStore))
