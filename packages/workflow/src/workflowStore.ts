@@ -1,11 +1,15 @@
 import { ListOptions, ListResult } from '@mini-math/utils'
 import {
   LockType,
+  NextLinkedWorkflow,
   NextLinkedWorkflowType,
+  WorkflowCore,
   WorkflowCoreType,
+  WorkflowRef,
   WorkflowRefType,
   type WorkflowDef,
 } from './types.js'
+import z from 'zod'
 
 export type WorkflowStoreErrorCode =
   | 'ALREADY_EXISTS'
@@ -24,6 +28,25 @@ export class WorkflowStoreError extends Error {
     this.name = 'WorkflowStoreError'
   }
 }
+
+export const BatchCreateRequestSchema = z
+  .array(
+    z.object({
+      workflowId: WorkflowRef,
+      core: WorkflowCore,
+      owner: z.string(),
+      options: z
+        .object({
+          previousLinkedWorkflow: WorkflowRef.optional(),
+          nextLinkedWorkflow: NextLinkedWorkflow.optional(),
+        })
+        .optional(),
+    }),
+  )
+  .min(2)
+  .max(100)
+
+export type BatchCreateRequest = z.infer<typeof BatchCreateRequestSchema>
 
 export abstract class WorkflowStore {
   private initialized = false
@@ -127,6 +150,11 @@ export abstract class WorkflowStore {
     return true
   }
 
+  protected async createBatchOrNone(request: BatchCreateRequest): Promise<WorkflowDef[]> {
+    await this.ensureInitialized()
+    return await this._createBatchOrNone(request)
+  }
+
   // -------------------------------------------------------------------------
   // INTERNAL API — must be implemented by concrete stores
   // -------------------------------------------------------------------------
@@ -155,4 +183,6 @@ export abstract class WorkflowStore {
   protected abstract _list(owner: string, options?: ListOptions): Promise<ListResult<WorkflowDef>>
 
   protected abstract _replace(workflowId: string, def: WorkflowDef): Promise<WorkflowDef>
+
+  protected abstract _createBatchOrNone(request: BatchCreateRequest): Promise<WorkflowDef[]>
 }

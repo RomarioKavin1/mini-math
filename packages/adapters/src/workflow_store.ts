@@ -1,4 +1,5 @@
 import {
+  BatchCreateRequest,
   NextLinkedWorkflowType,
   WorkflowCoreType,
   WorkflowDef,
@@ -249,6 +250,64 @@ export class PostgresWorkflowstore extends WorkflowStore {
       return result
     } catch (err) {
       this.handleError('_list', err, { options })
+    }
+  }
+
+  protected async _createBatchOrNone(request: BatchCreateRequest): Promise<WorkflowDef[]> {
+    class BatchCreateOrNoneConflict extends Error {
+      constructor(message: string) {
+        super(message)
+        this.name = 'BatchCreateOrNoneConflict'
+      }
+    }
+
+    try {
+      const inserts = request.map((r) =>
+        coreToInsert(r.workflowId, r.core, r.owner, r.options ?? {}),
+      )
+
+      // Transaction guarantees: either all rows appear, or none do.
+      const rows = await this.db.transaction(async (tx) => {
+        const insertedRows = await tx
+          .insert(workflows)
+          .values(inserts)
+          .onConflictDoNothing({ target: workflows.id })
+          .returning()
+
+        // If any conflicted, Postgres returns fewer rows -> rollback by throwing.
+        if (insertedRows.length !== inserts.length) {
+          throw new BatchCreateOrNoneConflict(
+            `Batch create aborted: expected ${inserts.length} inserts, got ${insertedRows.length}`,
+          )
+        }
+
+        return insertedRows
+      })
+
+      // Preserve request order explicitly (don’t trust DB returning order forever)
+      const byId = new Map(rows.map((r) => [r.id, r]))
+      return request.map((r) => {
+        const row = byId.get(r.workflowId)
+        if (!row) {
+          // Should be impossible given the length check, but keep it airtight.
+          throw new Error(`Batch create invariant violated: missing row for ${r.workflowId}`)
+        }
+        return rowToDef(row)
+      })
+    } catch (err) {
+      // "Or none": conflict/duplicate => return empty list (no partial success)
+      if (err instanceof Error && err.name === 'BatchCreateOrNoneConflict') {
+        this.logger.debug(
+          JSON.stringify({ method: '_createBatchOrNone', reason: err.message }) +
+            ' batch create returned none',
+        )
+        return []
+      }
+
+      this.handleError('_createBatchOrNone', err, {
+        batchSize: request.length,
+        workflowIds: request.map((r) => r.workflowId),
+      })
     }
   }
 

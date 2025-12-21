@@ -7,7 +7,12 @@ import {
   WorkflowSchema,
   type WorkflowDef,
 } from './types.js'
-import { WorkflowStore, WorkflowStoreError, type WorkflowStoreErrorCode } from './workflowStore.js'
+import {
+  BatchCreateRequest,
+  WorkflowStore,
+  WorkflowStoreError,
+  type WorkflowStoreErrorCode,
+} from './workflowStore.js'
 import { deepClone, ListOptions, ListResult } from '@mini-math/utils'
 
 export class InMemoryWorkflowStore extends WorkflowStore {
@@ -116,6 +121,23 @@ export class InMemoryWorkflowStore extends WorkflowStore {
       return deepClone(parsed)
     } catch (err) {
       throw this.asStoreError(err, 'VALIDATION', 'Failed to replace workflow')
+    }
+  }
+
+  protected async _createBatchOrNone(request: BatchCreateRequest): Promise<WorkflowDef[]> {
+    const toReturn = []
+    try {
+      for (let index = 0; index < request.length; index++) {
+        const element = request[index]
+        const result = await this._create(element.workflowId, element.core, element.owner, {
+          ...element.options,
+        })
+        toReturn.push(result)
+      }
+
+      return toReturn
+    } catch (err) {
+      throw this.asStoreError(err, 'VALIDATION', 'Failed to create workflow')
     }
   }
 
