@@ -59,7 +59,7 @@ export class Server {
     private cdpAccountStore: CdpAccountStore,
     private domainWithPort: string,
     private siweDomain: string,
-    private readonly session_secret: string,
+    private readonly secrets: { session: string; etherscanApikey: string },
     private allowedOrigins: string[],
     private cookieOptions: session.CookieOptions,
     private trustProxy: boolean,
@@ -133,7 +133,7 @@ export class Server {
     this.app.use(
       session({
         name: 'sid',
-        secret: this.session_secret,
+        secret: this.secrets.session,
         store,
         resave: false,
         saveUninitialized: false,
@@ -198,7 +198,10 @@ export class Server {
       CdpRouter.create(this.cdpAccountStore, this.userStore, mustHaveMinCdpAccountCredits),
     )
 
-    this.app.use(FeHelperRouter.basePath, FeHelperRouter.create(this.logger))
+    this.app.use(
+      FeHelperRouter.basePath,
+      FeHelperRouter.create(this.secrets.etherscanApikey, this.logger),
+    )
 
     this.app.use(SecretRouter.create(this.secretStore))
     this.app.use(ImageRouter.create(mustHaveMinimumStorageCredits, this.imageStore, this.userStore))

@@ -16,9 +16,16 @@ program
   .requiredOption('--siwe <siwe>', 'Siwe Domain to bind')
   .requiredOption('--allowed-origins <allowedOrigins>', 'Siwe Domain to bind')
   .requiredOption('--node-env <nodeEnv>', 'Production/Dev')
+  .requiredOption('--node-env <etherscanApikey>', 'Etherscan APIKEY')
   .action(
-    async (opts: { domain: string; siwe: string; allowedOrigins: string; nodeEnv: string }) => {
-      const { domain, siwe, allowedOrigins, nodeEnv } = opts
+    async (opts: {
+      domain: string
+      siwe: string
+      allowedOrigins: string
+      nodeEnv: string
+      etherscanApikey: string
+    }) => {
+      const { domain, siwe, allowedOrigins, nodeEnv, etherscanApikey } = opts
 
       // TODO: your real logic here
       console.log(`Starting server on domain: ${domain}`)
@@ -30,6 +37,7 @@ program
           .split(',')
           .map((origin) => origin.trim())
           .filter(Boolean),
+        etherscanApikey,
         nodeEnv.trim().toLowerCase() == 'production' || nodeEnv.trim().toLowerCase() == 'prod',
       )
     },

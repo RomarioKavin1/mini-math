@@ -3,7 +3,7 @@ import type { RequestHandler } from 'express'
 import z from 'zod'
 
 export function handleGasRequest(rpcUrls: string[], logger: Logger): RequestHandler {
-  return async (_, res, next) => {
+  return async (_, res) => {
     try {
       const result = await fetchGasPriceCached(rpcUrls, new Map(), logger)
       return res.json(result)
@@ -56,10 +56,9 @@ export async function fetchGasPriceCached(
     } catch (err) {
       logger.error(`$${String(err)}`)
       // Don't let one failing RPC kill the whole batch.
-      // If we have *any* cached value, return it (stale fallback).
       if (cached) return cached
       // Otherwise, skip this URL by returning null; we'll filter later.
-      return null as any
+      return null
     }
   })
 
@@ -70,7 +69,7 @@ export async function fetchGasPriceCached(
 export type GasPrice = z.infer<typeof GasPriceSchema>
 
 async function fetchGasPrice(rpcUrl: string): Promise<GasPrice> {
-  const rpc = async (method: string, params: any[] = []) => {
+  const rpc = async (method: string, params: unknown[] = []) => {
     const resp = await fetch(rpcUrl, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -80,7 +79,7 @@ async function fetchGasPrice(rpcUrl: string): Promise<GasPrice> {
     const json = await resp.json()
     if (json.error)
       throw new Error(`RPC error: ${json.error.message ?? JSON.stringify(json.error)}`)
-    return json.result as any
+    return json.result
   }
 
   const [chainIdHex, latestBlock] = await Promise.all([
@@ -93,7 +92,6 @@ async function fetchGasPrice(rpcUrl: string): Promise<GasPrice> {
 
   // EIP-1559: baseFeePerGas exists on most modern EVM chains.
   if (latestBlock.baseFeePerGas) {
-    // Get a reasonable priority fee (many nodes support this).
     let tip = '0x0'
     try {
       tip = await rpc('eth_maxPriorityFeePerGas')

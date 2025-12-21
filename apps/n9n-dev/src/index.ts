@@ -62,6 +62,7 @@ const cdpAccountStore = new PostgresCdpAccountStore(adapterConfig.getPostgresUrl
 
 const DOMAIN = process.env.DOMAIN!
 const SIWE_DOMAIN = process.env.SIWE_DOMAIN!
+const ETHERSCAN_APIKEY = process.env.ETHERSCAN_APIKEY!
 
 const server = new Server(
   workflowStore,
@@ -76,7 +77,7 @@ const server = new Server(
   cdpAccountStore,
   DOMAIN,
   SIWE_DOMAIN,
-  'super-long-session-secret',
+  { session: 'super-long-session-secret', etherscanApikey: ETHERSCAN_APIKEY },
   ['http://localhost:3000'],
   { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 1000 * 60 * 60 * 24 },
   false,

@@ -52,6 +52,7 @@ export class App {
     DOMAIN: string,
     SIWE_DOMAIN: string,
     allowedOrigins: string[],
+    etherscanApikey: string,
     isProd: boolean,
   ): Promise<void> {
     const server = new Server(
@@ -67,7 +68,7 @@ export class App {
       cdpAccountStore,
       DOMAIN,
       SIWE_DOMAIN,
-      'super-long-session-secret',
+      { session: 'super-long-session-secret', etherscanApikey },
       allowedOrigins,
       {
         httpOnly: isProd,

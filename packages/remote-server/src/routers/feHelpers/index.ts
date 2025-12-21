@@ -1,10 +1,10 @@
 import { Router } from 'express'
-import { handleGasRequest } from './routes.js'
+import { handleAbiRequest, handleGasRequest } from './routes/index.js'
 import { Logger } from '@mini-math/logger'
 
 export { doc, basePath } from './swagger.js'
 
-export function create(logger: Logger): Router {
+export function create(etherscanApikey: string, logger: Logger): Router {
   const router = Router()
 
   const rpcUrls: string[] = [
@@ -15,5 +15,6 @@ export function create(logger: Logger): Router {
     'https://mainnet.optimism.io',
   ]
   router.get('/gasPrices', handleGasRequest(rpcUrls, logger))
+  router.post('/abi', handleAbiRequest(etherscanApikey))
   return router
 }
