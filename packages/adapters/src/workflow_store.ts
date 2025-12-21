@@ -27,7 +27,7 @@ export class PostgresWorkflowstore extends WorkflowStore {
 
   private readonly postgresUrl: string
 
-  constructor(postgresUrl: string) {
+  constructor(postgresUrl: string, loggerName: string = 'PostgresWorkflowStore') {
     super()
     this.postgresUrl = postgresUrl
     this.logger = makeLogger('PostgresWorkflowStore')

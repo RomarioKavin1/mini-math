@@ -150,7 +150,7 @@ export abstract class WorkflowStore {
     return true
   }
 
-  protected async createBatchOrNone(request: BatchCreateRequest): Promise<WorkflowDef[]> {
+  public async createBatchOrNone(request: BatchCreateRequest): Promise<WorkflowDef[]> {
     await this.ensureInitialized()
     return await this._createBatchOrNone(request)
   }

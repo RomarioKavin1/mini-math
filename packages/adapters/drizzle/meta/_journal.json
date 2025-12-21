@@ -36,6 +36,13 @@
       "when": 1765834872795,
       "tag": "0004_organic_puppet_master",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766356918398,
+      "tag": "0005_brief_cammi",
+      "breakpoints": true
     }
   ]
 }
