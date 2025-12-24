@@ -168,6 +168,14 @@ export class PostgresWorkflowstore extends WorkflowStore {
         update.webhookUrl = patch.webhookUrl === undefined ? undefined : (patch.webhookUrl ?? null)
       }
 
+      if ('isTerminated' in patch && patch.isTerminated !== undefined) {
+        update.isTerminated = patch.isTerminated
+      }
+
+      if ('trace' in patch) {
+        update.trace = patch.trace === undefined ? null : normalizeTrace(patch.trace)
+      }
+
       if (Object.keys(update).length === 0) {
         // nothing to update, just return the current value
         return this._get(workflowId)
@@ -218,38 +226,32 @@ export class PostgresWorkflowstore extends WorkflowStore {
   protected async _list(owner: string, options?: ListOptions): Promise<ListResult<WorkflowDef>> {
     try {
       const limit = options?.limit ?? 50
-
-      // simple cursor = numeric offset, encoded as string
       const offset = options?.cursor ? Number(options.cursor) : 0
 
-      // main page query
       const itemsQuery = this.db
         .select()
         .from(workflows)
         .where(eq(workflows.owner, owner))
+        .orderBy(workflows.updatedAt, workflows.id) // deterministic
         .limit(limit)
         .offset(offset)
-        .orderBy(workflows.updatedAt)
 
-      // total count (for pagination / nextCursor decision)
-      const countQuery = this.db.select({ count: sql<number>`count(*)` }).from(workflows)
+      const countQuery = this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(workflows)
+        .where(eq(workflows.owner, owner)) // ✅ FIX: count per owner
 
       const [rows, [countRow]] = await Promise.all([itemsQuery, countQuery])
 
       const items = rows.map(rowToDef)
-      const total = Number(countRow.count)
+      const total = Number(countRow?.count ?? 0)
 
       const nextOffset = offset + limit
       const nextCursor = nextOffset < total ? String(nextOffset) : undefined
 
-      const result: ListResult<WorkflowDef> = {
-        items,
-        nextCursor,
-      }
-
-      return result
+      return { items, nextCursor }
     } catch (err) {
-      this.handleError('_list', err, { options })
+      this.handleError('_list', err, { owner, options })
     }
   }
 
@@ -274,7 +276,7 @@ export class PostgresWorkflowstore extends WorkflowStore {
           .onConflictDoNothing({ target: workflows.id })
           .returning()
 
-        // If any conflicted, Postgres returns fewer rows -> rollback by throwing.
+        // If conflicted, Postgres returns fewer rows -> rollback by throwing.
         if (insertedRows.length !== inserts.length) {
           throw new BatchCreateOrNoneConflict(
             `Batch create aborted: expected ${inserts.length} inserts, got ${insertedRows.length}`,
@@ -323,6 +325,8 @@ export class PostgresWorkflowstore extends WorkflowStore {
         entry: def.entry,
         globalState: def.globalState === undefined ? null : (def.globalState as unknown),
 
+        trace: def.trace === undefined ? null : normalizeTrace(def.trace),
+
         lock: def.lock === undefined ? null : def.lock,
         inProgress: def.inProgress === undefined ? false : def.inProgress,
         isInitiated: def.isInitiated === undefined ? false : def.isInitiated,
@@ -344,6 +348,7 @@ export class PostgresWorkflowstore extends WorkflowStore {
             edges: insert.edges,
             entry: insert.entry,
             globalState: insert.globalState,
+            trace: insert.trace,
 
             lock: insert.lock,
             inProgress: insert.inProgress,
@@ -372,6 +377,8 @@ function coreToInsert(
     nextLinkedWorkflow?: NextLinkedWorkflowType
   } = {},
 ): WorkflowInsert {
+  const trace = (core as unknown as { trace?: unknown[] }).trace
+
   return {
     id: workflowId,
     owner,
@@ -381,6 +388,9 @@ function coreToInsert(
     edges: core.edges,
     entry: core.entry,
     globalState: core.globalState === undefined ? null : (core.globalState as unknown),
+
+    trace: normalizeTrace(trace),
+
     webhookUrl: core.webhookUrl ?? null,
     previousLinkedWorkflow: options?.previousLinkedWorkflow ?? null,
     nextLinkedWorkflow: options?.nextLinkedWorkflow ?? null,
@@ -399,6 +409,8 @@ function rowToDef(row: WorkflowRow): WorkflowDef {
     entry: row.entry,
     globalState:
       row.globalState === null || row.globalState === undefined ? undefined : row.globalState,
+
+    trace: normalizeTrace(row.trace) ?? undefined,
     webhookUrl:
       row.webhookUrl === null || row.webhookUrl === undefined ? undefined : row.webhookUrl,
 
@@ -409,6 +421,9 @@ function rowToDef(row: WorkflowRow): WorkflowDef {
 
     isInitiated:
       row.isInitiated === null || row.isInitiated === undefined ? undefined : row.isInitiated,
+
+    isTerminated:
+      row.isTerminated === null || row.isTerminated === undefined ? undefined : row.isTerminated,
 
     expectingInputFor:
       row.expectingInputFor === null || row.expectingInputFor === undefined
@@ -434,4 +449,10 @@ function rowToDef(row: WorkflowRow): WorkflowDef {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   } as WorkflowDef
+}
+
+function normalizeTrace(v: unknown): unknown[] | null {
+  if (v === undefined) return null
+  if (v === null) return null
+  return Array.isArray(v) ? v : null
 }

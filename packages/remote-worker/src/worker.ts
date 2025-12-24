@@ -2,6 +2,7 @@ import { IQueue } from '@mini-math/queue'
 import { RuntimeStore } from '@mini-math/runtime'
 import {
   ClockOk,
+  ClockTerminated,
   ExpectingInputForType,
   Workflow,
   WorkflowRefType,
@@ -18,6 +19,7 @@ import crypto from 'node:crypto'
 
 const WORKER_CLOCK_TIME_IN_MS = 100
 const WEBHOOK_MAX_TIMEOUT = 60_000
+const MAX_TRACE_LENGTH = 500
 
 export class RemoteWorker {
   private logger: Logger
@@ -99,6 +101,13 @@ export class RemoteWorker {
         return
       }
 
+      if ((workflow.trace()?.length ?? 0) >= MAX_TRACE_LENGTH) {
+        this.logger.error(
+          `Terminated Workflow ${workflow.id()} because of max permitted clock cycles`,
+        )
+        return
+      }
+
       const userData = await this.userStore.get(workflow.owner())
       const credits = BigInt(userData?.executionCredits ?? 0)
       const info = await workflow.clock(credits)
@@ -125,11 +134,20 @@ export class RemoteWorker {
         return
       }
 
-      if (info.status == 'finished' || info.status == 'terminated') {
+      if (info.status == 'finished') {
         this.logger.error(
-          `Finished / Terminated Workflow ${workflow.id()} being tried to clock. This should not occur`,
+          `Finished Workflow ${workflow.id()} being tried to clock. This should not occur`,
         )
         await this.finished_workflow_queue.enqueue(workflow.id(), this.workflowPreserveTimeInMs)
+        return
+      }
+
+      if (info.status == 'terminated') {
+        this.logger.error(
+          `Terminated Workflow ${workflow.id()} being tried to clock. This should not occur`,
+        )
+
+        await this.handleTerminatedWorkflow(workflow, wfId, messageId, info)
         return
       }
 
@@ -138,7 +156,6 @@ export class RemoteWorker {
         this.logger.debug(
           `${workflow.id()} encountered error. Workflow will be cleanup in ${this.workflowPreserveTimeInMs} ms`,
         )
-        await this.finished_workflow_queue.enqueue(workflow.id(), this.workflowPreserveTimeInMs)
         return
       }
 
@@ -158,6 +175,11 @@ export class RemoteWorker {
     this.logger.trace(`Clock Status of workflow: continuing`)
 
     const [wfNext, rtNext] = workflow.serialize()
+
+    if (!wfNext.trace) {
+      wfNext.trace = []
+    }
+    wfNext.trace.push(clockOkResult)
 
     const updateResult = await Promise.all([
       this.workflowStore.update(workflow.id(), wfNext),
@@ -205,6 +227,36 @@ export class RemoteWorker {
         url: webhookUrl,
         eventType: 'awaiting-input',
         payload: { wfId: workflow.id(), info },
+        secret: this.webhookSecret,
+        timeoutMs: this.webhookTimeoutInMs,
+      })
+    }
+  }
+
+  private async handleTerminatedWorkflow(
+    workflow: Workflow,
+    wfId: WorkflowRefType,
+    messageId: string,
+    clockResult: ClockTerminated,
+  ): Promise<void> {
+    this.logger.trace(`Workflow ${wfId} errored, marking as complete for cleanup`)
+
+    const result = await this.workflowStore.update(wfId, {
+      inProgress: false,
+      isInitiated: false,
+      lock: undefined,
+    })
+    this.logger.trace(JSON.stringify(result))
+
+    await this.root_workflow_queue.ack(messageId)
+    await this.finished_workflow_queue.enqueue(workflow.id(), this.workflowPreserveTimeInMs)
+
+    const webhookUrl = workflow.webhookUrl()
+    if (webhookUrl) {
+      await this.sendWebhook(workflow.id(), {
+        url: webhookUrl,
+        eventType: 'terminated',
+        payload: { wfId: workflow.id(), info: clockResult },
         secret: this.webhookSecret,
         timeoutMs: this.webhookTimeoutInMs,
       })

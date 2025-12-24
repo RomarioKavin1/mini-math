@@ -88,12 +88,11 @@ export async function main() {
       const { status } = workflow_fetch_result.data
 
       console.log('workflow_fetch_result', { workflowId, status })
-      
+
       // avoid hammering the server
       await sleep(1000) // tune as needed
-      
-      if (status === 'idle') continue
 
+      if (status === 'idle') continue
     }
 
     // idle now -> continue to next workflowId

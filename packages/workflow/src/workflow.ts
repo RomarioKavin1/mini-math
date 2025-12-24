@@ -86,6 +86,10 @@ export class Workflow implements WorkflowGlobalState {
     return undefined
   }
 
+  public trace(): unknown[] | undefined {
+    return this.workflowDef.trace
+  }
+
   public workflowId(): string {
     return this.id()
   }

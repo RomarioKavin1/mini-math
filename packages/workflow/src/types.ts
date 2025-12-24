@@ -53,6 +53,8 @@ export const WorkflowSchema = WorkflowCore.extend({ id: WorkflowRef })
     lock: Lock.optional(),
     inProgress: z.boolean().optional(),
     isInitiated: z.boolean().optional(),
+    isTerminated: z.boolean().optional(),
+    trace: z.array(z.unknown()).optional(),
     expectingInputFor: ExpectingInputFor.optional(),
     externalInputStorage: ExternalInputStorage.optional(),
   })

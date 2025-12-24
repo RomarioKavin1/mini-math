@@ -28,6 +28,11 @@ export const workflows = pgTable(
     globalState: jsonb('global_state')
       .$type<unknown | null>()
       .default(sql`null`),
+
+    trace: jsonb('trace')
+      .$type<unknown[] | null>()
+      .default(sql`null`),
+
     webhookUrl: text('webhook_url'),
 
     // lock: optional JSONB blob that matches LockType
@@ -37,6 +42,7 @@ export const workflows = pgTable(
 
     inProgress: boolean('in_progress').notNull().default(false),
     isInitiated: boolean('is_initiated').notNull().default(false),
+    isTerminated: boolean('is_terminated').notNull().default(false),
     expectingInputFor: jsonb('expectingInputFor')
       .$type<ExpectingInputForType | null>()
       .default(sql`null`),
