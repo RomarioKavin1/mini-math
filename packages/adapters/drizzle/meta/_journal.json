@@ -43,6 +43,13 @@
       "when": 1766356918398,
       "tag": "0005_brief_cammi",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766618370011,
+      "tag": "0006_fat_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }

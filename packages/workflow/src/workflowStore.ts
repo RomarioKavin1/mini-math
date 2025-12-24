@@ -48,6 +48,7 @@ export const BatchCreateRequestSchema = z
 
 export type BatchCreateRequest = z.infer<typeof BatchCreateRequestSchema>
 
+const LOCK_TTL_MS = 30_000
 export abstract class WorkflowStore {
   private initialized = false
 
@@ -112,17 +113,19 @@ export abstract class WorkflowStore {
 
     return wf.lock?.lockedBy
   }
+
   public async isLocked(workflowId: string, entity: string): Promise<boolean> {
     await this.ensureInitialized()
+
     const wf = await this._get(workflowId)
     const lock = wf.lock
-    if (lock) {
-      if (lock.lockedBy == entity) {
-        return true
-      }
-      return false
-    }
-    return false
+    if (!lock) return false
+
+    const lockedAt = typeof lock.lockedAt === 'number' ? lock.lockedAt : 0
+    const isFresh = Date.now() - lockedAt <= LOCK_TTL_MS
+    if (!isFresh) return false
+
+    return lock.lockedBy === entity
   }
 
   public async acquireLock(workflowId: string, entity: string): Promise<boolean> {
