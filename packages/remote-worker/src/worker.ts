@@ -1,6 +1,7 @@
 import { IQueue } from '@mini-math/queue'
 import { RuntimeStore } from '@mini-math/runtime'
 import {
+  ClockInsufficientCredit,
   ClockOk,
   ClockTerminated,
   ExpectingInputForType,
@@ -148,6 +149,7 @@ export class RemoteWorker {
       if (info.status == 'insufficient_credit') {
         this.logger.debug(`User found with insufficient credits: ${workflow.owner()}`)
         const webhookUrl = workflow.webhookUrl()
+        await this.handleTerminatedWorkflow(workflow, wfId, messageId, info)
         if (webhookUrl) {
           await this.sendWebhook(workflow.id(), {
             url: webhookUrl,
@@ -266,7 +268,7 @@ export class RemoteWorker {
     workflow: Workflow,
     wfId: WorkflowRefType,
     messageId: string,
-    clockResult: ClockTerminated,
+    clockResult: ClockTerminated | ClockInsufficientCredit,
   ): Promise<void> {
     this.logger.trace(
       `Workflow ${wfId} errored, marking as complete for cleanup. Terminated with clockResult: ${JSON.stringify(clockResult)}`,

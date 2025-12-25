@@ -79,6 +79,14 @@ export async function main() {
   })
   console.log('grant_role', grant_role.data)
 
+  const grantPositiveCredits = await client.post('/grantCredits', {
+    storageCredits: 100,
+    executionCredit: 100,
+    cdpAccountCredits: 5,
+    userId: wallet.address,
+  })
+  console.log(grantPositiveCredits.data)
+
   const workflow_load_result = await client.post<{ id: string }>('/load', demo_workflow)
   console.log('workflow_load_result', workflow_load_result.data)
 
