@@ -55,7 +55,11 @@ export abstract class BatchStore {
         }
       }),
     )
-    const batchNoteResult = await this._create(owner, batchId, workflowCores)
+    const batchNoteResult = await this._create(
+      owner,
+      batchId,
+      workflowCreateResult.map((a) => a.id),
+    )
 
     if (batchNoteResult) {
       if (
@@ -120,7 +124,7 @@ export abstract class BatchStore {
   protected abstract _create(
     owner: string,
     batchId: string,
-    workflowCores: WorkflowCoreType[],
+    workflowRefs: WorkflowRefType[],
   ): Promise<boolean>
 
   protected abstract _get(owner: string, batchId: string): Promise<string[] | undefined>

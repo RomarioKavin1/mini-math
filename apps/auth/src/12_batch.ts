@@ -87,14 +87,20 @@ export async function main() {
       })
       const { status } = workflow_fetch_result.data
 
-      console.log('workflow_fetch_result', { workflowId, status })
+      console.log('workflow_fetch_result', { workflowId, status, time: new Date().valueOf() })
 
       // avoid hammering the server
       await sleep(1000) // tune as needed
 
-      if (status === 'idle') continue
+      if (status === 'finished') break
     }
-
-    // idle now -> continue to next workflowId
   }
+
+  const getBatch = await client.post<{ status: boolean; data: { workflowIds: string[] } }>(
+    '/batchJobs/getBatch',
+    {
+      batchId: batchJobCreateRequest.data.data.batchId,
+    },
+  )
+  console.log('getBatch:', getBatch.data)
 }

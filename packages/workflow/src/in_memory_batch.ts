@@ -1,5 +1,5 @@
 import { ListOptions, ListResult } from '@mini-math/utils'
-import { WorkflowCoreType } from './types.js'
+import { WorkflowCoreType, WorkflowRefType } from './types.js'
 import { WorkflowStore } from './workflowStore.js'
 import { BatchStore, WorkflowBatchType } from './batchStore.js' // adjust path
 import { RuntimeStore } from '@mini-math/runtime'
@@ -43,16 +43,12 @@ export class InMemoryBatchStore extends BatchStore {
   protected async _create(
     owner: string,
     batchId: string,
-    workflowCores: WorkflowCoreType[],
+    workflowRefs: WorkflowRefType[],
   ): Promise<boolean> {
     const k = keyOf(owner, batchId)
     if (this.batches.has(k)) return false
 
-    // Store indices as the "workflowIds" in this in-memory batch DS.
-    // Example: workflowCores.length === 3 => ["0","1","2"]
-    const workflowIds = Array.from({ length: workflowCores.length }, (_, i) => String(i))
-
-    this.batches.set(k, workflowIds)
+    this.batches.set(k, workflowRefs)
     return true
   }
 

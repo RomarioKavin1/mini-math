@@ -78,7 +78,7 @@ export class PostgresBatchStore extends BatchStore {
   protected async _create(
     owner: string,
     batchId: string,
-    workflowCores: WorkflowCoreType[],
+    workflowRefs: WorkflowRefType[],
   ): Promise<boolean> {
     try {
       // Use a transaction so batch row + membership rows are consistent.
@@ -93,11 +93,11 @@ export class PostgresBatchStore extends BatchStore {
         if (inserted.length === 0) return false // already existed
 
         // 2) Insert membership rows (index mapping)
-        if (workflowCores.length > 0) {
-          const membership = workflowCores.map((_, i) => ({
+        if (workflowRefs.length > 0) {
+          const membership = workflowRefs.map((a) => ({
             owner,
             batchId,
-            workflowId: String(i),
+            workflowId: a,
           }))
 
           await tx.insert(workflowBatchWorkflows).values(membership).onConflictDoNothing() // protect against dupes if retried
@@ -106,7 +106,7 @@ export class PostgresBatchStore extends BatchStore {
         return true
       })
     } catch (err) {
-      this.handleError('_create', err, { owner, batchId, n: workflowCores.length })
+      this.handleError('_create', err, { owner, batchId, n: workflowRefs.length })
     }
   }
 
