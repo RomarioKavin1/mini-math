@@ -20,6 +20,9 @@ export function revertIfNoRuntime(runtimeStore: RuntimeStore): RequestHandler {
 
     try {
       const runtime = await runtimeStore.get(wfId)
+      if (!runtime) {
+        return res.status(400).json({ status: false, message: 'runtime not found' })
+      }
       req.runtime = runtime.serialize()
       res.locals.runtime = runtime.serialize()
       return next()

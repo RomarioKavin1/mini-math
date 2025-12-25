@@ -133,7 +133,7 @@ export class PostgresRuntimeStore extends RuntimeStore {
     }
   }
 
-  protected async _get(workflowId: string): Promise<Runtime> {
+  protected async _get(workflowId: string): Promise<Runtime | undefined> {
     try {
       const row = await this.db.query.runtimes.findFirst({
         where: eq(runtimes.id, workflowId),
@@ -150,7 +150,10 @@ export class PostgresRuntimeStore extends RuntimeStore {
     }
   }
 
-  protected async _update(workflowId: string, patch: Partial<RuntimeDef>): Promise<Runtime> {
+  protected async _update(
+    workflowId: string,
+    patch: Partial<RuntimeDef>,
+  ): Promise<Runtime | undefined> {
     try {
       const update: Partial<RuntimeInsert> = {}
 
@@ -289,7 +292,7 @@ export class PostgresRuntimeStore extends RuntimeStore {
     }
   }
 
-  protected async _seedIfEmpty(workflowId: string, entry: string): Promise<Runtime> {
+  protected async _seedIfEmpty(workflowId: string, entry: string): Promise<Runtime | undefined> {
     try {
       const exists = await this._exists(workflowId)
       if (exists) {

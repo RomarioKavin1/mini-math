@@ -91,6 +91,18 @@ export class RemoteWorker {
 
       const wf = await this.workflowStore.get(wfId)
       const rt = await this.runtimeStore.get(wfId)
+
+      if (!wf || !rt) {
+        if (!wf) this.logger.error(`No workflow with ${wfId} is found, removing it from records`)
+
+        if (!rt) this.logger.error(`No runtime with ${wfId} is found, removing it from records`)
+
+        await this.workflowStore.delete(wfId)
+        await this.runtimeStore.delete(wfId)
+
+        return
+      }
+
       wf.inProgress = true
 
       const secrets = await this.secretStore.listSecrets(wf.owner)

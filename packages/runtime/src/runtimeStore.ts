@@ -54,13 +54,16 @@ export abstract class RuntimeStore {
   }
 
   /** Get the runtime instance for workflowId. */
-  public async get(workflowId: string): Promise<Runtime> {
+  public async get(workflowId: string): Promise<Runtime | undefined> {
     await this.ensureInitialized()
     return this._get(workflowId)
   }
 
   /** Merge/patch the runtime state for workflowId. */
-  public async update(workflowId: string, patch: Partial<RuntimeDef>): Promise<Runtime> {
+  public async update(
+    workflowId: string,
+    patch: Partial<RuntimeDef>,
+  ): Promise<Runtime | undefined> {
     await this.ensureInitialized()
     return this._update(workflowId, patch)
   }
@@ -84,7 +87,7 @@ export abstract class RuntimeStore {
   }
 
   /** Return a serialized snapshot (data only). */
-  public async snapshot(workflowId: string): Promise<RuntimeDef> {
+  public async snapshot(workflowId: string): Promise<RuntimeDef | undefined> {
     await this.ensureInitialized()
     return this._snapshot(workflowId)
   }
@@ -99,7 +102,7 @@ export abstract class RuntimeStore {
    * Seed queue with `entry` if queue/visited are empty and not finished.
    * Returns the updated runtime.
    */
-  public async seedIfEmpty(workflowId: string, entry: string): Promise<Runtime> {
+  public async seedIfEmpty(workflowId: string, entry: string): Promise<Runtime | undefined> {
     await this.ensureInitialized()
     return this._seedIfEmpty(workflowId, entry)
   }
@@ -116,9 +119,12 @@ export abstract class RuntimeStore {
     batch: { workflowId: string; initial?: Partial<RuntimeDef> }[],
   ): Promise<Runtime[]>
 
-  protected abstract _get(workflowId: string): Promise<Runtime>
+  protected abstract _get(workflowId: string): Promise<Runtime | undefined>
 
-  protected abstract _update(workflowId: string, patch: Partial<RuntimeDef>): Promise<Runtime>
+  protected abstract _update(
+    workflowId: string,
+    patch: Partial<RuntimeDef>,
+  ): Promise<Runtime | undefined>
 
   protected abstract _exists(workflowId: string): Promise<boolean>
 
@@ -126,9 +132,9 @@ export abstract class RuntimeStore {
 
   protected abstract _replace(workflowId: string, def: RuntimeDef): Promise<Runtime>
 
-  protected abstract _snapshot(workflowId: string): Promise<RuntimeDef>
+  protected abstract _snapshot(workflowId: string): Promise<RuntimeDef | undefined>
 
   protected abstract _list(options?: ListOptions): Promise<ListResult<RuntimeDef>>
 
-  protected abstract _seedIfEmpty(workflowId: string, entry: string): Promise<Runtime>
+  protected abstract _seedIfEmpty(workflowId: string, entry: string): Promise<Runtime | undefined>
 }

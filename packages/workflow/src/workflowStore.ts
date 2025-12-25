@@ -77,12 +77,15 @@ export abstract class WorkflowStore {
     return this._create(workflowId, core, owner, { ...options })
   }
 
-  public async get(workflowId: string): Promise<WorkflowDef> {
+  public async get(workflowId: string): Promise<WorkflowDef | undefined> {
     await this.ensureInitialized()
     return this._get(workflowId)
   }
 
-  public async update(workflowId: string, patch: Partial<WorkflowDef>): Promise<WorkflowDef> {
+  public async update(
+    workflowId: string,
+    patch: Partial<WorkflowDef>,
+  ): Promise<WorkflowDef | undefined> {
     await this.ensureInitialized()
     return this._update(workflowId, patch)
   }
@@ -111,14 +114,14 @@ export abstract class WorkflowStore {
     await this.ensureInitialized()
     const wf = await this._get(workflowId)
 
-    return wf.lock?.lockedBy
+    return wf?.lock?.lockedBy
   }
 
   public async isLocked(workflowId: string, entity: string): Promise<boolean> {
     await this.ensureInitialized()
 
     const wf = await this._get(workflowId)
-    const lock = wf.lock
+    const lock = wf?.lock
     if (!lock) return false
 
     const lockedAt = typeof lock.lockedAt === 'number' ? lock.lockedAt : 0
@@ -175,9 +178,12 @@ export abstract class WorkflowStore {
     },
   ): Promise<WorkflowDef>
 
-  protected abstract _get(workflowId: string): Promise<WorkflowDef>
+  protected abstract _get(workflowId: string): Promise<WorkflowDef | undefined>
 
-  protected abstract _update(workflowId: string, patch: Partial<WorkflowDef>): Promise<WorkflowDef>
+  protected abstract _update(
+    workflowId: string,
+    patch: Partial<WorkflowDef>,
+  ): Promise<WorkflowDef | undefined>
 
   protected abstract _exists(workflowId: string): Promise<boolean>
 

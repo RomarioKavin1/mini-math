@@ -89,14 +89,14 @@ export class PostgresWorkflowstore extends WorkflowStore {
     }
   }
 
-  protected async _get(workflowId: string): Promise<WorkflowDef> {
+  protected async _get(workflowId: string): Promise<WorkflowDef | undefined> {
     try {
       const row = await this.db.query.workflows.findFirst({
         where: eq(workflows.id, workflowId),
       })
 
       if (!row) {
-        throw new Error(`Workflow ${workflowId} not found`)
+        return undefined
       }
 
       return rowToDef(row)
@@ -105,7 +105,10 @@ export class PostgresWorkflowstore extends WorkflowStore {
     }
   }
 
-  protected async _update(workflowId: string, patch: Partial<WorkflowDef>): Promise<WorkflowDef> {
+  protected async _update(
+    workflowId: string,
+    patch: Partial<WorkflowDef>,
+  ): Promise<WorkflowDef | undefined> {
     try {
       const update: Partial<WorkflowInsert> = {}
 

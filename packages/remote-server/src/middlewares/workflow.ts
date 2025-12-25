@@ -78,6 +78,11 @@ export function revertIfNotWorkflowOwner(workflowStore: WorkflowStore): RequestH
     }
 
     const wf = await workflowStore.get(wfId)
+
+    if (!wf) {
+      return res.status(400).json({ success: false, message: 'workflow not found in db' })
+    }
+
     if (wf.owner.toLowerCase() == req.user.address.toLowerCase()) {
       return next()
     }

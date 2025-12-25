@@ -103,17 +103,20 @@ export class InMemoryRuntimeStore extends RuntimeStore {
     }
   }
 
-  public async _get(workflowId: string): Promise<Runtime> {
+  public async _get(workflowId: string): Promise<Runtime | undefined> {
     if (!workflowId) throw new RuntimeStoreError('VALIDATION', 'workflowId is required')
     const existing = this.store.get(workflowId)
-    if (!existing) throw new RuntimeStoreError('NOT_FOUND', `runtime for "${workflowId}" not found`)
-    return this.cloneRuntime(existing)
+    return existing ? this.cloneRuntime(existing) : undefined
   }
 
-  public async _update(workflowId: string, patch: Partial<RuntimeDef>): Promise<Runtime> {
+  public async _update(
+    workflowId: string,
+    patch: Partial<RuntimeDef>,
+  ): Promise<Runtime | undefined> {
     if (!workflowId) throw new RuntimeStoreError('VALIDATION', 'workflowId is required')
     const existing = this.store.get(workflowId)
-    if (!existing) throw new RuntimeStoreError('NOT_FOUND', `runtime for "${workflowId}" not found`)
+
+    if (!existing) return undefined
 
     try {
       const merged = RuntimeStateSchema.parse({ ...existing.serialize(), ...(patch ?? {}) })
@@ -145,9 +148,9 @@ export class InMemoryRuntimeStore extends RuntimeStore {
     }
   }
 
-  public async _snapshot(workflowId: string): Promise<RuntimeDef> {
+  public async _snapshot(workflowId: string): Promise<RuntimeDef | undefined> {
     const rt = await this.get(workflowId)
-    return rt.serialize() // plain data, safe to hand out
+    return rt?.serialize() // plain data, safe to hand out
   }
 
   public async _list(options?: ListOptions): Promise<ListResult<RuntimeDef>> {
@@ -168,10 +171,10 @@ export class InMemoryRuntimeStore extends RuntimeStore {
     return { items: slice, nextCursor }
   }
 
-  public async _seedIfEmpty(workflowId: string, entry: string): Promise<Runtime> {
+  public async _seedIfEmpty(workflowId: string, entry: string): Promise<Runtime | undefined> {
     if (!workflowId) throw new RuntimeStoreError('VALIDATION', 'workflowId is required')
     const existing = this.store.get(workflowId)
-    if (!existing) throw new RuntimeStoreError('NOT_FOUND', `runtime for "${workflowId}" not found`)
+    if (!existing) return undefined
 
     const snap = existing.serialize()
     if (snap.queue.length === 0 && snap.visited.length === 0 && !snap.finished) {
