@@ -546,6 +546,9 @@ export class Workflow implements WorkflowGlobalState {
     return undefined
   }
 
+  public isTerminated(): boolean {
+    return !!this.workflowDef.isTerminated
+  }
   public isFinished(): boolean {
     const rt = this.runtime
     this.logger.trace(`Workflow ID: ${this.workflowDef.id} rt.finished=${rt.finished}`)

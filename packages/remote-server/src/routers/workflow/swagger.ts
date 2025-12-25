@@ -247,7 +247,7 @@ export const fetch: RouteConfig = {
       content: {
         'application/json': {
           schema: z.object({
-            status: z.enum(['inProgress', 'initiated', 'awaitingInput', 'idle']),
+            status: z.enum(['inProgress', 'initiated', 'awaitingInput', 'idle', 'terminated']),
             expectingInputFor: ExpectingInputFor.optional(),
           }),
         },

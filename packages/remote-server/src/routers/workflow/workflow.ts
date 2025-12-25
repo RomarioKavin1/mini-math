@@ -109,6 +109,11 @@ export function create(
     if (workflow.isFinished()) {
       return res.status(200).json({ status: 'finished', result: wfDef })
     }
+
+    if (workflow.isTerminated()) {
+      return res.status(422).json({ status: 'terminated', result: wfDef })
+    }
+
     const expectingInputFor = workflow.expectingInputFor()
     if (expectingInputFor) {
       return res.status(206).json({ status: 'awaitingInput', expectingInputFor })

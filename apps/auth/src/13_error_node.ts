@@ -93,8 +93,12 @@ export async function main() {
     const workflow_fetch_result = await client.post<{ status: string }>('/fetch', {
       id: workflow_load_result.data.id,
     })
-    console.log('workflow_fetch_result', workflow_fetch_result.data)
     const { status } = workflow_fetch_result.data
+    console.log('workflow_fetch_result', {
+      workflowId: workflow_load_result.data.id,
+      status,
+      time: new Date().valueOf(),
+    })
     await sleep(1000)
 
     if (status === 'finished' || status == 'terminated') break

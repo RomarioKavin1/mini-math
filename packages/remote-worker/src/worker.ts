@@ -236,8 +236,11 @@ export class RemoteWorker {
       `Workflow ID: ${wfId} has been paused, expecting input: ${JSON.stringify(info)}`,
     )
 
+    const existingTrace = workflow.trace() || []
+
     const updateResult = await this.workflowStore.update(workflow.id(), {
       expectingInputFor: info.expectingInputFor,
+      trace: [...existingTrace, info],
     })
     this.logger.trace(JSON.stringify(updateResult))
 
@@ -265,11 +268,13 @@ export class RemoteWorker {
     messageId: string,
     clockResult: ClockTerminated,
   ): Promise<void> {
-    this.logger.trace(`Workflow ${wfId} errored, marking as complete for cleanup`)
-
+    this.logger.trace(
+      `Workflow ${wfId} errored, marking as complete for cleanup. Terminated with clockResult: ${JSON.stringify(clockResult)}`,
+    )
     const result = await this.workflowStore.update(wfId, {
       inProgress: false,
       isInitiated: false,
+      isTerminated: true,
       lock: undefined,
     })
     this.logger.trace(JSON.stringify(result))
