@@ -55,19 +55,14 @@ export class PostgresUserStore extends UserStore {
     }
   }
 
-  protected async _create(
-    userId: string,
-    storageCredits: number,
-    executionCredits: number,
-    cdpAccountCredits: number,
-  ): Promise<boolean> {
+  protected async _create(userId: string, delta?: CreditDelta): Promise<boolean> {
     const res = await this.db
       .insert(users)
       .values({
         userId,
-        storageCredits,
-        executionCredits,
-        cdpAccountCredits,
+        storageCredits: delta?.storageCredits || 0,
+        executionCredits: delta?.executionCredits || 0,
+        cdpAccountCredits: delta?.cdpAccountCredits || 0,
       })
       .onConflictDoNothing()
       .returning({ userId: users.userId })

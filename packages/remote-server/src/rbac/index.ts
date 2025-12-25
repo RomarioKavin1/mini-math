@@ -62,12 +62,7 @@ export function handleGrantCredits(userStore: UserStore): RequestHandler {
     const payload = req.body as GrantCreditDeltaSchemaType
     const exists = await userStore.get(payload.userId)
     if (!exists) {
-      const createResult = await userStore.create(
-        payload.userId,
-        payload.storageCredits,
-        payload.executionCredits,
-        payload.cdpAccountCredits,
-      )
+      const createResult = await userStore.create(payload.userId, payload)
       if (createResult) {
         return res
           .status(200)

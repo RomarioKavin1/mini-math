@@ -38,7 +38,7 @@ export async function main() {
 
   const grantPositiveCredits = await client.post('/grantCredits', {
     storageCredits: 100,
-    executionCredit: 100,
+    executionCredits: 100,
     cdpAccountCredits: 5,
     userId: wallet.address,
   })
@@ -46,7 +46,7 @@ export async function main() {
 
   const removeCredits = await client.post('/grantCredits', {
     storageCredits: -100,
-    executionCredit: -100,
+    executionCredits: -100,
     cdpAccountCredits: -5,
     userId: wallet.address,
   })

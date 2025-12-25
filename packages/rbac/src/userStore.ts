@@ -30,14 +30,9 @@ export abstract class UserStore {
 
   // PUBLIC API
 
-  public async create(
-    userId: string,
-    storageCredits = 0,
-    executionCredit = 0,
-    cdpAccountCredits = 0,
-  ): Promise<boolean> {
+  public async create(userId: string, delta?: CreditDelta): Promise<boolean> {
     await this.ensureInitialized()
-    return this._create(userId, storageCredits, executionCredit, cdpAccountCredits)
+    return this._create(userId, delta)
   }
 
   public async get(userId: string): Promise<UserRecord | undefined> {
@@ -77,12 +72,7 @@ export abstract class UserStore {
 
   protected abstract initialize(): Promise<void>
 
-  protected abstract _create(
-    userId: string,
-    storageCredits: number,
-    executionCredits: number,
-    cdpAccountCredits: number,
-  ): Promise<boolean>
+  protected abstract _create(userId: string, delta?: CreditDelta): Promise<boolean>
 
   protected abstract _get(userId: string): Promise<UserRecord | undefined>
 

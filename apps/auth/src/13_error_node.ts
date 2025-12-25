@@ -80,9 +80,7 @@ export async function main() {
   console.log('grant_role', grant_role.data)
 
   const grantPositiveCredits = await client.post('/grantCredits', {
-    storageCredits: 100,
-    executionCredit: 100,
-    cdpAccountCredits: 5,
+    executionCredits: 10000,
     userId: wallet.address,
   })
   console.log(grantPositiveCredits.data)

@@ -60,19 +60,14 @@ export class InMemoryUserStore extends UserStore {
     // nothing to do
   }
 
-  protected async _create(
-    userId: string,
-    storageCredits: number,
-    executionCredits: number,
-    cdpAccountCredits: number,
-  ): Promise<boolean> {
+  protected async _create(userId: string, delta?: CreditDelta): Promise<boolean> {
     if (this.store.has(userId)) return false
 
     this.store.set(userId, {
       userId,
-      storageCredits,
-      executionCredits,
-      cdpAccountCredits,
+      storageCredits: delta?.storageCredits || 0,
+      executionCredits: delta?.executionCredits || 0,
+      cdpAccountCredits: delta?.cdpAccountCredits || 0,
     })
 
     return true
