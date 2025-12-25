@@ -76,9 +76,33 @@ export class RemoteWorker {
     }
   }
 
+  private async handleSanityCheck(wfId: string): Promise<boolean> {
+    const wf = await this.workflowStore.get(wfId)
+    const rt = await this.runtimeStore.get(wfId)
+
+    if (!wf || !rt) {
+      if (!wf) this.logger.error(`No workflow with ${wfId} is found, removing it from records`)
+
+      if (!rt) this.logger.error(`No runtime with ${wfId} is found, removing it from records`)
+
+      await this.workflowStore.delete(wfId)
+      await this.runtimeStore.delete(wfId)
+
+      return false
+    }
+
+    return true
+  }
   private async handleMessage(messageId: string, wfId: WorkflowRefType): Promise<void> {
     try {
       this.logger.info(`Received workflow-message. MessageId: ${messageId}, wfId: ${wfId}`)
+
+      const okToProceed = await this.handleSanityCheck(wfId)
+      if (!okToProceed) {
+        this.logger.error(`Workflow: ${wfId} not ok to proceed`)
+        await this.root_workflow_queue.ack(messageId)
+        return
+      }
 
       const lock = await this.workflowStore.acquireLock(wfId, this.workerName)
       if (!lock) {
@@ -89,19 +113,9 @@ export class RemoteWorker {
 
       this.logger.trace(`Acquired lock on workflow ${wfId} successfully`)
 
-      const wf = await this.workflowStore.get(wfId)
-      const rt = await this.runtimeStore.get(wfId)
-
-      if (!wf || !rt) {
-        if (!wf) this.logger.error(`No workflow with ${wfId} is found, removing it from records`)
-
-        if (!rt) this.logger.error(`No runtime with ${wfId} is found, removing it from records`)
-
-        await this.workflowStore.delete(wfId)
-        await this.runtimeStore.delete(wfId)
-
-        return
-      }
+      // at this we are sure that they exists
+      const wf = (await this.workflowStore.get(wfId))!
+      const rt = (await this.runtimeStore.get(wfId))!
 
       wf.inProgress = true
 
