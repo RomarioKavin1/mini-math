@@ -3,6 +3,7 @@ import type { SessionData } from 'express-session'
 import { Store } from 'express-session'
 import type { KeyValueStore } from '@mini-math/keystore'
 import { Logger, makeLogger } from '@mini-math/logger'
+import { devConfig } from './config/dev.js'
 
 interface KVSessionStoreOpts {
   prefix?: string // key prefix for session entries
@@ -46,7 +47,9 @@ export class KeyValueSessionStore extends Store {
   // ---- Required by express-session.Store ----
 
   get(sid: string, cb: (err?: unknown, session?: SessionData | null) => void): void {
-    this.logger.trace(`get sid: ${sid}`)
+    if (devConfig.verboseSessionLogging) {
+      this.logger.trace(`get sid: ${sid}`)
+    }
     this.kv
       .get<string>(this.k(sid))
       .then((raw) => {
