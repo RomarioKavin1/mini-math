@@ -1,5 +1,5 @@
 import { NodeFactory } from '@mini-math/compiler'
-import { Server } from '@mini-math/remote-server'
+import { Server, devConfig } from '@mini-math/remote-server'
 import { InMemoryRuntimeStore } from '@mini-math/runtime'
 import { InMemoryWorkflowStore, WorkflowRefType, InMemoryBatchStore } from '@mini-math/workflow'
 import { RemoteWorker } from '@mini-math/remote-worker'
@@ -10,7 +10,7 @@ import { InMemoryQueue } from '@mini-math/queue'
 import { InMemoryCdpStore, InMemorySecretStore } from '@mini-math/secrets'
 import { InMemoryImageStore } from '@mini-math/images'
 
-const INIT_PLATFORM_OWNER = '0x29e78bB5ef59a7fa66606c665408D6E680F5a06f'
+const INIT_PLATFORM_OWNER = devConfig.platformOwner
 const nodeFactory = new NodeFactory()
 const root_workflow_queue = new InMemoryQueue<WorkflowRefType>()
 const workflowPreserveTimeInMs = 60 * 1000
@@ -43,8 +43,6 @@ for (let i = 1; i <= 10; i++) {
   worker.start()
 }
 
-const DOMAIN = process.env.DOMAIN!
-const SIWE_DOMAIN = process.env.SIWE_DOMAIN!
 const ETHERSCAN_APIKEY = process.env.ETHERSCAN_APIKEY!
 
 const server = new Server(
@@ -59,12 +57,12 @@ const server = new Server(
   sessionStore,
   cdpAccountStore,
   batchStore,
-  DOMAIN,
-  SIWE_DOMAIN,
-  { session: 'super-long-session-secret', etherscanApikey: ETHERSCAN_APIKEY },
-  ['http://localhost:3000'],
-  { httpOnly: true, sameSite: 'lax', secure: false, maxAge: 1000 * 60 * 60 * 24 },
-  true,
+  devConfig.domain,
+  devConfig.siweDomain,
+  { session: devConfig.sessionSecret, etherscanApikey: ETHERSCAN_APIKEY },
+  devConfig.allowedOrigins,
+  devConfig.cookieOptions,
+  devConfig.trustProxy,
 )
 
 await server.start()
