@@ -1,6 +1,7 @@
 import { Role, RoleStore } from '@mini-math/rbac'
 import type { RequestHandler } from 'express'
 import { SessionUser } from '../routers/auth/auth.js'
+import { getAddress } from 'viem'
 
 import { makeLogger } from '@mini-math/logger'
 const logger = makeLogger('role-middlwares')
@@ -23,7 +24,7 @@ export const revertIfNoRole =
       }
 
       try {
-        const normalizedAddress = user.address.toLowerCase()
+        const normalizedAddress = getAddress(user.address)
         const allRoles = await roleStore.getRoles(normalizedAddress)
 
         for (const requiredRole of roles) {
