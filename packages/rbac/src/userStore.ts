@@ -32,6 +32,7 @@ export const GrantCreditDeltaSchema = CreditDeltaSchema.extend({ userId: z.strin
 export type GrantCreditDeltaSchemaType = z.infer<typeof GrantCreditDeltaSchema>
 
 export type EvmPaymentAddressResolver = (userId: string) => string | Promise<string>
+export type EvmWallet = (userId: string) => Wallet | Promise<Wallet>
 
 export abstract class UserStore {
   private initialized = false
@@ -165,7 +166,7 @@ import { getAddress, Wallet, solidityPackedKeccak256 } from 'ethers'
 
 const isEvmAddress = (s: string): boolean => /^0x[a-fA-F0-9]{40}$/.test(s)
 
-export function makePaymentResolver(seed: string): EvmPaymentAddressResolver {
+export function makePaymentResolverWallet(seed: string): EvmWallet {
   if (!seed) throw new Error('seed is required')
 
   return (userId: string) => {
@@ -178,11 +179,19 @@ export function makePaymentResolver(seed: string): EvmPaymentAddressResolver {
     let h = solidityPackedKeccak256(['string', 'address'], [seed, normalized])
     if (BigInt(h) === 0n) {
       h = solidityPackedKeccak256(['string', 'address', 'string'], [seed, normalized, ':retry1'])
-      if (BigInt(h) === 0n)
+      if (BigInt(h) === 0n) {
         throw new Error('Derived private key is zero; bad seed/userId combination')
+      }
     }
 
-    const wallet = new Wallet(h)
-    return wallet.address
+    return new Wallet(h)
+  }
+}
+
+export function makePaymentResolver(seed: string): EvmPaymentAddressResolver {
+  const walletResolver = makePaymentResolverWallet(seed)
+  return async (userId: string) => {
+    const w = await walletResolver(userId)
+    return w.address
   }
 }
