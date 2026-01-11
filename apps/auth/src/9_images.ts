@@ -5,6 +5,8 @@ import { wrapper } from 'axios-cookiejar-support'
 import { SiweMessage } from 'siwe'
 import { config } from 'dotenv'
 import { GrantCreditDeltaSchemaType } from '@mini-math/rbac'
+import { randomUUID } from 'crypto'
+
 config()
 
 const demoName = 'demoName'
@@ -72,14 +74,16 @@ export async function main() {
   const grantCreditsResult = await client.post('/increaseCredits', grantCreditPayload)
   console.log(grantCreditsResult.data)
 
+  const imageId = randomUUID()
   const storeWorkflowResult = await client.post('/storeImage', {
+    imageId,
     workflowName: demoName,
     core: demo_workflow,
   })
   console.log(storeWorkflowResult.data)
 
   const existImageResult = await client.post('/existImage', {
-    workflowName: demoName,
+    imageId,
   })
   console.log(existImageResult.data)
 
@@ -92,9 +96,10 @@ export async function main() {
   const updateImageResult = await client.post('/updateImage', {
     workflowName: demoName,
     core: demo_workflow,
+    imageId,
   })
   console.log(updateImageResult.data)
 
-  const deleteImageResult = await client.post('/deleteImage', { workflowName: demoName })
+  const deleteImageResult = await client.post('/deleteImage', { imageId })
   console.log(deleteImageResult.data)
 }
