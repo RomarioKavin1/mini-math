@@ -1,3 +1,4 @@
+import { main as main0 } from './0_credits.js'
 import { main as main1 } from './1_e2e.js'
 import { main as main2 } from './2_generate_signed_message.js'
 import { main as main3 } from './3_roles.js'
@@ -15,20 +16,36 @@ import { main as main14 } from './14_custom_wf.js'
 
 // This is not right way to test, but comment out tests you don't want
 async function main() {
+  await main0()
+  console.log('############### main 0 ###############')
   await main1()
+  console.log('############### main 1 ###############')
   await main2()
+  console.log('############### main 2 ###############')
   await main3()
+  console.log('############### main 3 ###############')
   await main4()
+  console.log('############### main 4 ###############')
   await main5()
+  console.log('############### main 5 ###############')
   await main6()
+  console.log('############### main 6 ###############')
   await main7()
+  console.log('############### main 7 ###############')
   await main8()
+  console.log('############### main 8 ###############')
   await main9()
+  console.log('############### main 9 ###############')
   await main10()
+  console.log('############### main 10 ###############')
   await main11()
+  console.log('############### main 11 ###############')
   await main12()
+  console.log('############### main 12 ###############')
   await main13()
+  console.log('############### main 13 ###############')
   await main14()
+  console.log('############### main 14 ###############')
 
   return 'Done'
 }

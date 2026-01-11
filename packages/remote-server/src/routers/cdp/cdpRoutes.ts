@@ -5,6 +5,7 @@ import { createHash } from 'crypto'
 import { CdpAccountStore } from '@mini-math/secrets'
 import { ListOptions } from '@mini-math/utils'
 import { UserStore } from '@mini-math/rbac'
+import { v4 as uuidv4 } from 'uuid'
 
 export function accountNameV1(address: string): string {
   const normalized = address.trim().toLowerCase()
@@ -35,7 +36,11 @@ export function create(
 
       if (!exists) {
         // then deduct credits for creation
-        await userStore.adjustCredits(userAddress, { cdpAccountCredits: -1 })
+        await userStore.reduceCredits(
+          userAddress,
+          { cdpAccountCredits: 1 },
+          { memo: uuidv4(), meta: { for: 'cdp account opening' } },
+        )
       }
 
       await cdpAccountStore.store(userAddress, derivedAccountName)

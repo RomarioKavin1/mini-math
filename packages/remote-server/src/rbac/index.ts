@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express'
 import { GrantCreditDeltaSchemaType, getRoleAdmin, RoleStore, UserStore } from '@mini-math/rbac'
 import { makeLogger } from '@mini-math/logger'
+import { v4 as uuidv4 } from 'uuid'
 
 const logger = makeLogger('Rbac Handlers')
 
@@ -56,21 +57,40 @@ export function handleRevokeRole(roleStore: RoleStore): RequestHandler {
   }
 }
 
-export function handleGrantCredits(userStore: UserStore): RequestHandler {
+export function handleIncreaseCredits(userStore: UserStore): RequestHandler {
   return async (req, res) => {
     logger.trace(`User: ${req.user.address} trying to grant credits`)
     const payload = req.body as GrantCreditDeltaSchemaType
     const exists = await userStore.get(payload.userId)
     if (!exists) {
-      const createResult = await userStore.create(payload.userId, payload)
-      if (createResult) {
-        return res
-          .status(200)
-          .json({ success: true, message: 'user created + credits updated successfully' })
-      }
+      await userStore.create(payload.userId, {}, { kind: 'admin_adjustment', memo: uuidv4() })
     }
 
-    const result = await userStore.adjustCredits(payload.userId, { ...payload })
+    const result = await userStore.increaseCredits(
+      payload.userId,
+      { ...payload },
+      { kind: 'admin_adjustment', memo: uuidv4() },
+    )
+    if (result) {
+      return res.status(200).json({ success: true, message: 'credits updated successfully' })
+    }
+  }
+}
+
+export function handleDecreaseCredits(userStore: UserStore): RequestHandler {
+  return async (req, res) => {
+    logger.trace(`User: ${req.user.address} trying to revoke credits`)
+    const payload = req.body as GrantCreditDeltaSchemaType
+    const exists = await userStore.get(payload.userId)
+    if (!exists) {
+      await userStore.create(payload.userId, {}, { kind: 'admin_adjustment', memo: uuidv4() })
+    }
+
+    const result = await userStore.reduceCredits(
+      payload.userId,
+      { ...payload },
+      { kind: 'admin_adjustment', refId: uuidv4() },
+    )
     if (result) {
       return res.status(200).json({ success: true, message: 'credits updated successfully' })
     }

@@ -162,7 +162,7 @@ export async function main() {
     userId: wallet.address,
   }
 
-  const grantPositiveCredits = await client.post('/grantCredits', grantCreditPayload)
+  const grantPositiveCredits = await client.post('/increaseCredits', grantCreditPayload)
   console.log(grantPositiveCredits.data)
 
   const workflow_load_result = await client.post<{ id: string }>('/load', demo_workflow)

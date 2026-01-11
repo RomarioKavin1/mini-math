@@ -33,9 +33,9 @@ export const grantRole: RouteConfig = {
   security: [{ cookieAuth: [] }],
 }
 
-export const grantCredits: RouteConfig = {
+export const increaseCredits: RouteConfig = {
   method: 'post',
-  path: '/grantCredits',
+  path: '/increaseCredits',
   tags: [RBAC],
   summary: 'Grants Credits to Users',
   request: {
@@ -48,6 +48,39 @@ export const grantCredits: RouteConfig = {
   responses: {
     200: {
       description: 'When credit is successfully granted',
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
+    },
+    400: {
+      description: 'Validation Error',
+      content: { 'application/json': { schema: CommonSchemas.ValidationError } },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
+    },
+    403: {
+      description: 'Forbidden',
+      content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
+    },
+  },
+  security: [{ cookieAuth: [] }],
+}
+
+export const decreaseCredits: RouteConfig = {
+  method: 'post',
+  path: '/decreaseCredits',
+  tags: [RBAC],
+  summary: 'Removes Credits from Users',
+  request: {
+    body: {
+      content: {
+        'application/json': { schema: GrantCreditDeltaSchema },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'When credit is successfully removed',
       content: { 'application/json': { schema: CommonSchemas.StandardResponse } },
     },
     400: {
@@ -95,4 +128,4 @@ export const revokeRole: RouteConfig = {
   security: [{ cookieAuth: [] }],
 }
 
-export const doc: RouteConfig[] = [revokeRole, grantCredits, grantRole]
+export const doc: RouteConfig[] = [revokeRole, grantRole, decreaseCredits, increaseCredits]

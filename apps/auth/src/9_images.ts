@@ -69,7 +69,7 @@ export async function main() {
     unifiedCredits: 10,
     userId: wallet.address,
   }
-  const grantCreditsResult = await client.post('/grantCredits', grantCreditPayload)
+  const grantCreditsResult = await client.post('/increaseCredits', grantCreditPayload)
   console.log(grantCreditsResult.data)
 
   const storeWorkflowResult = await client.post('/storeImage', {

@@ -73,7 +73,7 @@ export class RemoteWorker {
       await this.finished_workflow_queue.ack(messageId)
     } catch (error) {
       await this.finished_workflow_queue.nack(messageId, true)
-      this.logger.error(`Worker cleanup-error: ${JSON.stringify(error)}`)
+      this.logger.error(`Worker cleanup-error: ${wfId}`, { error })
     }
   }
 
@@ -189,7 +189,10 @@ export class RemoteWorker {
       await this.handleInProgressWorkflow(workflow, wfId, messageId, info)
     } catch (error) {
       await this.root_workflow_queue.nack(messageId, true)
-      this.logger.error(`Worker error: ${JSON.stringify(error)} during workflow: ${wfId}`)
+      this.logger.error('Worker error during workflow', {
+        wfId,
+        error,
+      })
     }
   }
 
@@ -218,13 +221,25 @@ export class RemoteWorker {
     this.logger.trace(`Released lock on workflow ${wfId} successfully`)
 
     const result2 = await Promise.all([
-      this.userStore.adjustCredits(workflow.owner(), {
-        unifiedCredits: -clockOkResult.executionInfo.creditsConsumed,
-      }),
+      this.userStore.reduceCredits(
+        workflow.owner(),
+        {
+          unifiedCredits: clockOkResult.executionInfo.creditsConsumed,
+        },
+        {
+          kind: 'other',
+          refId: `${wfId}-${clockOkResult.node.id}`,
+          meta: { for: 'workflow execution', workflow: wfId },
+        },
+      ),
+    ])
+
+    this.logger.trace(JSON.stringify(result2))
+    const result3 = await Promise.all([
       this.root_workflow_queue.enqueue(wfId, this.workerClockTime),
       this.root_workflow_queue.ack(messageId),
     ])
-    this.logger.trace(JSON.stringify(result2))
+    this.logger.trace(JSON.stringify(result3))
   }
 
   private async handleWaitingForInput(

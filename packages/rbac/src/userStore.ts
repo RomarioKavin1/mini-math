@@ -1,14 +1,11 @@
 import { ListOptions, ListResult } from '@mini-math/utils'
 import { z } from 'zod'
-
-// --------------------------------------------
-// Types / Schemas
-// --------------------------------------------
+import { Wallet, getAddress, solidityPackedKeccak256 } from 'ethers'
+import { UserTransactionStore } from './transactions.js'
 
 export const EvmPaymentAddressSchema = z
   .string()
   .min(1, 'evm_payment_address is required')
-  // loosen/remove regex if you support non-standard formats
   .regex(/^0x[a-fA-F0-9]{40}$/, 'evm_payment_address must be a 0x-prefixed 20-byte hex address')
 
 export type EvmPaymentAddress = z.infer<typeof EvmPaymentAddressSchema>
@@ -22,10 +19,9 @@ export const UserRecordSchema = z.object({
 export type UserRecord = z.infer<typeof UserRecordSchema>
 
 export const CreditDeltaSchema = z.object({
-  unifiedCredits: z.number().optional(),
-  cdpAccountCredits: z.number().optional(),
+  unifiedCredits: z.number().positive().optional(),
+  cdpAccountCredits: z.number().positive().optional(),
 })
-
 export type CreditDelta = z.infer<typeof CreditDeltaSchema>
 
 export const GrantCreditDeltaSchema = CreditDeltaSchema.extend({ userId: z.string() })
@@ -34,11 +30,38 @@ export type GrantCreditDeltaSchemaType = z.infer<typeof GrantCreditDeltaSchema>
 export type EvmPaymentAddressResolver = (userId: string) => string | Promise<string>
 export type EvmWallet = (userId: string) => Wallet | Promise<Wallet>
 
+export type AdjustCreditsOptions = {
+  kind?: 'admin_adjustment' | 'reward' | 'purchase' | 'refund' | 'other'
+  refId?: string
+  memo?: string
+  meta?: Record<string, unknown>
+}
+
+function toAmountString(n: number, name: string): string {
+  if (!Number.isFinite(n)) throw new Error(`invalid ${name}: ${n}`)
+  if (!Number.isInteger(n)) throw new Error(`${name} must be an integer, got: ${n}`)
+  if (n <= 0) throw new Error(`${name} must be > 0, got: ${n}`)
+  return String(n)
+}
+
+function toNonNegativeInt(n: number | undefined, name: string): number {
+  if (n === undefined) return 0
+  if (!Number.isFinite(n)) throw new Error(`invalid ${name}: ${n}`)
+  if (!Number.isInteger(n)) throw new Error(`${name} must be an integer, got: ${n}`)
+  if (n < 0) throw new Error(`${name} must be >= 0, got: ${n}`)
+  return n
+}
+
 export abstract class UserStore {
   private initialized = false
   private readonly resolveEvmPaymentAddress: EvmPaymentAddressResolver
+  protected readonly user_transaction_history: UserTransactionStore
 
-  constructor(resolveEvmPaymentAddress: EvmPaymentAddressResolver) {
+  constructor(
+    user_transaction_history: UserTransactionStore,
+    resolveEvmPaymentAddress: EvmPaymentAddressResolver,
+  ) {
+    this.user_transaction_history = user_transaction_history
     this.resolveEvmPaymentAddress = resolveEvmPaymentAddress
   }
 
@@ -54,14 +77,63 @@ export abstract class UserStore {
     return EvmPaymentAddressSchema.parse(addr)
   }
 
-  // --------------------------------------------
-  // PUBLIC API (NO evm_payment_address input)
-  // --------------------------------------------
+  protected async atomic<T>(fn: () => Promise<T>): Promise<T> {
+    return fn()
+  }
 
-  public async create(userId: string, delta?: CreditDelta): Promise<boolean> {
+  public async create(
+    userId: string,
+    delta?: CreditDelta,
+    opts?: AdjustCreditsOptions,
+  ): Promise<boolean> {
     await this.ensureInitialized()
     const evm_payment_address = await this.deriveEvmPaymentAddress(userId)
-    return this._create(userId, evm_payment_address, delta)
+
+    return this.atomic(async () => {
+      const ok = await this._create(userId, evm_payment_address, delta)
+      if (!ok) return false
+
+      if (delta) {
+        const u = toNonNegativeInt(delta.unifiedCredits, 'unifiedCredits')
+        const c = toNonNegativeInt(delta.cdpAccountCredits, 'cdpAccountCredits')
+
+        if (u > 0) {
+          await this.user_transaction_history.credit({
+            userId,
+            asset: {
+              symbol: 'UNIFIED_CREDIT',
+              decimals: 0,
+              amount: toAmountString(u, 'unifiedCredits'),
+            },
+            memo: opts?.memo,
+            platformRef: {
+              kind: opts?.kind ?? 'other',
+              refId: opts?.refId ?? `create:${userId}:unified`,
+            },
+            meta: opts?.meta,
+          })
+        }
+
+        if (c > 0) {
+          await this.user_transaction_history.credit({
+            userId,
+            asset: {
+              symbol: 'CDP_ACCOUNT_CREDIT',
+              decimals: 0,
+              amount: toAmountString(c, 'cdpAccountCredits'),
+            },
+            memo: opts?.memo,
+            platformRef: {
+              kind: opts?.kind ?? 'other',
+              refId: opts?.refId ?? `create:${userId}:cdp`,
+            },
+            meta: opts?.meta,
+          })
+        }
+      }
+
+      return true
+    })
   }
 
   public async get(userId: string): Promise<UserRecord | undefined> {
@@ -79,10 +151,126 @@ export abstract class UserStore {
     return this._upsert(userId, evm_payment_address, patch)
   }
 
-  public async adjustCredits(userId: string, delta: CreditDelta): Promise<UserRecord> {
+  public async increaseCredits(
+    userId: string,
+    delta: CreditDelta,
+    opts?: AdjustCreditsOptions,
+  ): Promise<UserRecord> {
     await this.ensureInitialized()
     const evm_payment_address = await this.deriveEvmPaymentAddress(userId)
-    return this._adjustCredits(userId, evm_payment_address, delta)
+
+    const u = toNonNegativeInt(delta.unifiedCredits, 'unifiedCredits')
+    const c = toNonNegativeInt(delta.cdpAccountCredits, 'cdpAccountCredits')
+
+    const inc: CreditDelta = {
+      unifiedCredits: u > 0 ? u : undefined,
+      cdpAccountCredits: c > 0 ? c : undefined,
+    }
+
+    return this.atomic(async () => {
+      const after = await this._increaseCredits(userId, evm_payment_address, inc)
+
+      const kind = opts?.kind ?? 'other'
+      const refBase = opts?.refId ?? `increase:${userId}`
+      const memo = opts?.memo
+      const meta = opts?.meta
+
+      if (u > 0) {
+        await this.user_transaction_history.credit({
+          userId,
+          asset: {
+            symbol: 'UNIFIED_CREDIT',
+            decimals: 0,
+            amount: toAmountString(u, 'unifiedCredits'),
+          },
+          memo,
+          platformRef: { kind, refId: `${refBase}:unified` },
+          meta,
+        })
+      }
+
+      if (c > 0) {
+        await this.user_transaction_history.credit({
+          userId,
+          asset: {
+            symbol: 'CDP_ACCOUNT_CREDIT',
+            decimals: 0,
+            amount: toAmountString(c, 'cdpAccountCredits'),
+          },
+          memo,
+          platformRef: { kind, refId: `${refBase}:cdp` },
+          meta,
+        })
+      }
+
+      return after
+    })
+  }
+
+  public async reduceCredits(
+    userId: string,
+    delta: CreditDelta,
+    opts?: AdjustCreditsOptions,
+  ): Promise<UserRecord> {
+    await this.ensureInitialized()
+    const evm_payment_address = await this.deriveEvmPaymentAddress(userId)
+
+    const u = toNonNegativeInt(delta.unifiedCredits, 'unifiedCredits')
+    const c = toNonNegativeInt(delta.cdpAccountCredits, 'cdpAccountCredits')
+
+    const dec: CreditDelta = {
+      unifiedCredits: u > 0 ? u : undefined,
+      cdpAccountCredits: c > 0 ? c : undefined,
+    }
+
+    return this.atomic(async () => {
+      const after = await this._reduceCredits(userId, evm_payment_address, dec)
+
+      const kind = opts?.kind ?? 'other'
+      const refBase = opts?.refId ?? `reduce:${userId}`
+      const memo = opts?.memo
+      const meta = opts?.meta
+
+      if (u > 0) {
+        await this.user_transaction_history.debit({
+          userId,
+          asset: {
+            symbol: 'UNIFIED_CREDIT',
+            decimals: 0,
+            amount: toAmountString(u, 'unifiedCredits'),
+          },
+          memo,
+          evmRef: {
+            chainId: 0,
+            tokenAddress: '0x0000000000000000000000000000000000000000',
+            txHash: `0x${'0'.repeat(64)}`,
+            logIndex: 0,
+          },
+          meta: { ...meta, kind, refId: `${refBase}:unified` },
+        })
+      }
+
+      if (c > 0) {
+        await this.user_transaction_history.debit({
+          userId,
+          asset: {
+            symbol: 'CDP_ACCOUNT_CREDIT',
+            decimals: 0,
+            amount: toAmountString(c, 'cdpAccountCredits'),
+          },
+          memo,
+          evmRef: {
+            chainId: 0,
+            tokenAddress: '0x0000000000000000000000000000000000000000',
+            txHash: `0x${'0'.repeat(64)}`,
+            logIndex: 0,
+          },
+          meta: { ...meta, kind, refId: `${refBase}:cdp` },
+        })
+      }
+
+      return after
+    })
   }
 
   public async exists(userId: string): Promise<boolean> {
@@ -97,28 +285,16 @@ export abstract class UserStore {
     return this._delete(userId, evm_payment_address)
   }
 
-  /**
-   * Listing all rows is still possible; but note:
-   * since address is derived from userId, in many systems you'll effectively have 1 row per user.
-   */
   public async list(options?: ListOptions): Promise<ListResult<UserRecord>> {
     await this.ensureInitialized()
     return this._list(options)
   }
 
-  /**
-   * Since evm_payment_address is indexed and you explicitly wanted it searchable,
-   * this is a nice public API even though other methods derive it.
-   */
   public async getByPaymentAddress(evm_payment_address: string): Promise<UserRecord | undefined> {
     await this.ensureInitialized()
     const addr = EvmPaymentAddressSchema.parse(evm_payment_address)
     return this._getByPaymentAddress(addr)
   }
-
-  // --------------------------------------------
-  // PROTECTED HOOKS (DB is keyed by both)
-  // --------------------------------------------
 
   protected abstract initialize(): Promise<void>
 
@@ -139,7 +315,13 @@ export abstract class UserStore {
     patch: Partial<Omit<UserRecord, 'userId' | 'evm_payment_address'>>,
   ): Promise<UserRecord>
 
-  protected abstract _adjustCredits(
+  protected abstract _increaseCredits(
+    userId: string,
+    evm_payment_address: EvmPaymentAddress,
+    delta: CreditDelta,
+  ): Promise<UserRecord>
+
+  protected abstract _reduceCredits(
     userId: string,
     evm_payment_address: EvmPaymentAddress,
     delta: CreditDelta,
@@ -161,8 +343,6 @@ export abstract class UserStore {
     evm_payment_address: EvmPaymentAddress,
   ): Promise<UserRecord | undefined>
 }
-
-import { getAddress, Wallet, solidityPackedKeccak256 } from 'ethers'
 
 const isEvmAddress = (s: string): boolean => /^0x[a-fA-F0-9]{40}$/.test(s)
 

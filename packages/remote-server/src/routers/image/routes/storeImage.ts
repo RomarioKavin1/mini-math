@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express'
 import { ImageStore } from '@mini-math/images'
 import { UserStore } from '@mini-math/rbac'
 import { ImageSchemas } from '../../../schemas/index.js'
+import { v4 as uuidv4 } from 'uuid'
 
 export function handleStoreImage(
   imageStore: ImageStore,
@@ -45,9 +46,17 @@ export function handleStoreImage(
         })
       }
 
-      const creditsUpdated = await userStore.adjustCredits(userAddress, {
-        unifiedCredits: -storageCreditCost,
-      })
+      const creditsUpdated = await userStore.reduceCredits(
+        userAddress,
+        {
+          unifiedCredits: storageCreditCost,
+        },
+        {
+          kind: 'other',
+          refId: uuidv4(),
+          meta: { for: 'storing image', image: storeImagePayload.workflowName },
+        },
+      )
 
       return res.status(201).json({
         success: true,

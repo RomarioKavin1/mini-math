@@ -4,6 +4,9 @@ import { UserStore, type UserRecord, type CreditDelta } from './userStore.js'
 import { getAddress } from 'viem'
 
 import { ListOptions, ListResult } from '@mini-math/utils'
+import { InMemoryUserTransactionStore } from './in_memory_transactions.js'
+import { UserTransactionStore } from './transactions.js'
+
 export class InMemoryRoleStore extends RoleStore {
   constructor(initPlatformOwner: string) {
     super()
@@ -57,20 +60,30 @@ export class InMemoryRoleStore extends RoleStore {
 }
 
 export class InMemoryUserStore extends UserStore {
-  // Keyed by composite PK: (userId, evm_payment_address)
   private store = new Map<string, UserRecord>()
 
-  constructor() {
-    // Derivation: "address" is just userId (as you requested)
-    super((userId) => userId)
+  constructor(txStore: UserTransactionStore = new InMemoryUserTransactionStore()) {
+    super(txStore, (userId) => userId)
   }
 
-  protected async initialize(): Promise<void> {
-    // nothing to do
+  protected async initialize(): Promise<void> {}
+
+  private norm(s: string): string {
+    return s.toLowerCase()
   }
 
-  private key(userId: string, evm_payment_address: string): string {
-    return `${userId}|${evm_payment_address}`
+  private key(userId: string): string {
+    return this.norm(userId)
+  }
+
+  private assertAddressMatches(existing: UserRecord, evm_payment_address: string): void {
+    const a = this.norm(existing.evm_payment_address)
+    const b = this.norm(evm_payment_address)
+    if (a !== b) {
+      throw new Error(
+        `evm_payment_address mismatch for userId=${existing.userId} (have=${existing.evm_payment_address}, got=${evm_payment_address})`,
+      )
+    }
   }
 
   protected async _create(
@@ -78,14 +91,19 @@ export class InMemoryUserStore extends UserStore {
     evm_payment_address: string,
     delta?: CreditDelta,
   ): Promise<boolean> {
-    const k = this.key(userId, evm_payment_address)
+    const k = this.key(userId)
     if (this.store.has(k)) return false
+
+    const u = delta?.unifiedCredits ?? 0
+    const c = delta?.cdpAccountCredits ?? 0
+    if (u < 0) throw new Error('create: unifiedCredits must be >= 0')
+    if (c < 0) throw new Error('create: cdpAccountCredits must be >= 0')
 
     this.store.set(k, {
       userId,
       evm_payment_address,
-      unifiedCredits: delta?.unifiedCredits ?? 0,
-      cdpAccountCredits: delta?.cdpAccountCredits ?? 0,
+      unifiedCredits: u,
+      cdpAccountCredits: c,
     })
 
     return true
@@ -95,8 +113,10 @@ export class InMemoryUserStore extends UserStore {
     userId: string,
     evm_payment_address: string,
   ): Promise<UserRecord | undefined> {
-    const u = this.store.get(this.key(userId, evm_payment_address))
-    return u ? { ...u } : undefined
+    const existing = this.store.get(this.key(userId))
+    if (!existing) return undefined
+    this.assertAddressMatches(existing, evm_payment_address)
+    return { ...existing }
   }
 
   protected async _upsert(
@@ -104,7 +124,7 @@ export class InMemoryUserStore extends UserStore {
     evm_payment_address: string,
     patch: Partial<Omit<UserRecord, 'userId' | 'evm_payment_address'>>,
   ): Promise<UserRecord> {
-    const k = this.key(userId, evm_payment_address)
+    const k = this.key(userId)
 
     const existing =
       this.store.get(k) ??
@@ -115,42 +135,102 @@ export class InMemoryUserStore extends UserStore {
         cdpAccountCredits: 0,
       } satisfies UserRecord)
 
-    // Patch only touches credit fields; keep keys fixed.
+    if (this.store.has(k)) {
+      this.assertAddressMatches(existing, evm_payment_address)
+    }
+
+    const nextUnified = patch.unifiedCredits ?? existing.unifiedCredits
+    const nextCdp = patch.cdpAccountCredits ?? existing.cdpAccountCredits
+
+    if (!Number.isFinite(nextUnified) || !Number.isInteger(nextUnified)) {
+      throw new Error('upsert: unifiedCredits must be an integer')
+    }
+    if (!Number.isFinite(nextCdp) || !Number.isInteger(nextCdp)) {
+      throw new Error('upsert: cdpAccountCredits must be an integer')
+    }
+    if (nextUnified < 0) throw new Error('upsert: unifiedCredits must be >= 0')
+    if (nextCdp < 0) throw new Error('upsert: cdpAccountCredits must be >= 0')
+
     const updated: UserRecord = {
       userId,
       evm_payment_address,
-      unifiedCredits: patch.unifiedCredits ?? existing.unifiedCredits,
-      cdpAccountCredits: patch.cdpAccountCredits ?? existing.cdpAccountCredits,
+      unifiedCredits: nextUnified,
+      cdpAccountCredits: nextCdp,
     }
 
     this.store.set(k, updated)
     return { ...updated }
   }
 
-  protected async _adjustCredits(
+  protected async _increaseCredits(
     userId: string,
     evm_payment_address: string,
     delta: CreditDelta,
   ): Promise<UserRecord> {
-    const k = this.key(userId, evm_payment_address)
+    const k = this.key(userId)
 
-    const existing =
-      this.store.get(k) ??
-      ({
-        userId,
-        evm_payment_address,
-        unifiedCredits: 0,
-        cdpAccountCredits: 0,
-      } satisfies UserRecord)
+    const existing = this.store.get(k)
+    if (!existing) throw new Error(`user not found: ${userId}`)
+    this.assertAddressMatches(existing, evm_payment_address)
 
-    const dUnified = delta.unifiedCredits ?? 0
-    const dCdp = delta.cdpAccountCredits ?? 0
+    const du = delta.unifiedCredits ?? 0
+    const dc = delta.cdpAccountCredits ?? 0
+
+    if (!Number.isFinite(du) || !Number.isInteger(du) || du < 0) {
+      throw new Error('increaseCredits: unifiedCredits must be an integer >= 0')
+    }
+    if (!Number.isFinite(dc) || !Number.isInteger(dc) || dc < 0) {
+      throw new Error('increaseCredits: cdpAccountCredits must be an integer >= 0')
+    }
 
     const updated: UserRecord = {
       userId,
-      evm_payment_address,
-      unifiedCredits: existing.unifiedCredits + dUnified,
-      cdpAccountCredits: existing.cdpAccountCredits + dCdp,
+      evm_payment_address: existing.evm_payment_address,
+      unifiedCredits: existing.unifiedCredits + du,
+      cdpAccountCredits: existing.cdpAccountCredits + dc,
+    }
+
+    this.store.set(k, updated)
+    return { ...updated }
+  }
+
+  protected async _reduceCredits(
+    userId: string,
+    evm_payment_address: string,
+    delta: CreditDelta,
+  ): Promise<UserRecord> {
+    const k = this.key(userId)
+
+    const existing = this.store.get(k)
+    if (!existing) throw new Error(`user not found: ${userId}`)
+    this.assertAddressMatches(existing, evm_payment_address)
+
+    const du = delta.unifiedCredits ?? 0
+    const dc = delta.cdpAccountCredits ?? 0
+
+    if (!Number.isFinite(du) || !Number.isInteger(du) || du < 0) {
+      throw new Error('reduceCredits: unifiedCredits must be an integer >= 0')
+    }
+    if (!Number.isFinite(dc) || !Number.isInteger(dc) || dc < 0) {
+      throw new Error('reduceCredits: cdpAccountCredits must be an integer >= 0')
+    }
+
+    if (existing.unifiedCredits < du) {
+      throw new Error(
+        `reduceCredits: insufficient unifiedCredits (have=${existing.unifiedCredits}, need=${du})`,
+      )
+    }
+    if (existing.cdpAccountCredits < dc) {
+      throw new Error(
+        `reduceCredits: insufficient cdpAccountCredits (have=${existing.cdpAccountCredits}, need=${dc})`,
+      )
+    }
+
+    const updated: UserRecord = {
+      userId,
+      evm_payment_address: existing.evm_payment_address,
+      unifiedCredits: existing.unifiedCredits - du,
+      cdpAccountCredits: existing.cdpAccountCredits - dc,
     }
 
     this.store.set(k, updated)
@@ -158,11 +238,17 @@ export class InMemoryUserStore extends UserStore {
   }
 
   protected async _exists(userId: string, evm_payment_address: string): Promise<boolean> {
-    return this.store.has(this.key(userId, evm_payment_address))
+    const existing = this.store.get(this.key(userId))
+    if (!existing) return false
+    this.assertAddressMatches(existing, evm_payment_address)
+    return true
   }
 
   protected async _delete(userId: string, evm_payment_address: string): Promise<boolean> {
-    return this.store.delete(this.key(userId, evm_payment_address))
+    const existing = this.store.get(this.key(userId))
+    if (!existing) return false
+    this.assertAddressMatches(existing, evm_payment_address)
+    return this.store.delete(this.key(userId))
   }
 
   protected async _list(options?: ListOptions): Promise<ListResult<UserRecord>> {
@@ -181,9 +267,9 @@ export class InMemoryUserStore extends UserStore {
   protected async _getByPaymentAddress(
     evm_payment_address: string,
   ): Promise<UserRecord | undefined> {
-    // Linear scan is fine for in-memory; DB will use the index.
+    const needle = this.norm(evm_payment_address)
     for (const u of this.store.values()) {
-      if (u.evm_payment_address === evm_payment_address) return { ...u }
+      if (this.norm(u.evm_payment_address) === needle) return { ...u }
     }
     return undefined
   }

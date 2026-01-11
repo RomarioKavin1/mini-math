@@ -14,8 +14,17 @@ import {
 import { users } from './db/schema/0_users'
 import * as schema from './db/schema/0_users.js'
 import { makeLogger, Logger } from '@mini-math/logger'
+import { PostgresTransactionStore } from './transaction_store'
 
 type Db = NodePgDatabase<typeof schema>
+
+function toNonNegativeInt(n: number | undefined, name: string): number {
+  if (n === undefined) return 0
+  if (!Number.isFinite(n)) throw new Error(`invalid ${name}: ${n}`)
+  if (!Number.isInteger(n)) throw new Error(`${name} must be an integer, got: ${n}`)
+  if (n < 0) throw new Error(`${name} must be >= 0, got: ${n}`)
+  return n
+}
 
 export class PostgresUserStore extends UserStore {
   private db!: Db
@@ -24,7 +33,7 @@ export class PostgresUserStore extends UserStore {
   private readonly postgresUrl: string
 
   constructor(postgresUrl: string, resolveEvmPaymentAddress: EvmPaymentAddressResolver) {
-    super(resolveEvmPaymentAddress)
+    super(new PostgresTransactionStore(postgresUrl), resolveEvmPaymentAddress)
     this.postgresUrl = postgresUrl
     this.logger = makeLogger('PostgresUserStore')
   }
@@ -60,13 +69,16 @@ export class PostgresUserStore extends UserStore {
     try {
       const addr = EvmPaymentAddressSchema.parse(evm_payment_address)
 
+      const u = toNonNegativeInt(delta?.unifiedCredits, 'unifiedCredits')
+      const c = toNonNegativeInt(delta?.cdpAccountCredits, 'cdpAccountCredits')
+
       const res = await this.db
         .insert(users)
         .values({
           userId,
           evm_payment_address: addr,
-          unifiedCredits: delta?.unifiedCredits ?? 0,
-          cdpAccountCredits: delta?.cdpAccountCredits ?? 0,
+          unifiedCredits: u,
+          cdpAccountCredits: c,
         })
         .onConflictDoNothing()
         .returning({ userId: users.userId, evm_payment_address: users.evm_payment_address })
@@ -157,7 +169,7 @@ export class PostgresUserStore extends UserStore {
     }
   }
 
-  protected async _adjustCredits(
+  protected async _increaseCredits(
     userId: string,
     evm_payment_address: string,
     delta: CreditDelta,
@@ -165,8 +177,8 @@ export class PostgresUserStore extends UserStore {
     try {
       const addr = EvmPaymentAddressSchema.parse(evm_payment_address)
 
-      const dUnified = delta.unifiedCredits ?? 0
-      const dCdp = delta.cdpAccountCredits ?? 0
+      const dUnified = toNonNegativeInt(delta.unifiedCredits, 'unifiedCredits')
+      const dCdp = toNonNegativeInt(delta.cdpAccountCredits, 'cdpAccountCredits')
 
       const [row] = await this.db
         .insert(users)
@@ -197,7 +209,54 @@ export class PostgresUserStore extends UserStore {
         cdpAccountCredits: row!.cdpAccountCredits ?? 0,
       } as UserRecord
     } catch (err) {
-      this.handleError('_adjustCredits', err, { userId, evm_payment_address, delta })
+      this.handleError('_increaseCredits', err, { userId, evm_payment_address, delta })
+    }
+  }
+
+  protected async _reduceCredits(
+    userId: string,
+    evm_payment_address: string,
+    delta: CreditDelta,
+  ): Promise<UserRecord> {
+    try {
+      const addr = EvmPaymentAddressSchema.parse(evm_payment_address)
+
+      const dUnified = toNonNegativeInt(delta.unifiedCredits, 'unifiedCredits')
+      const dCdp = toNonNegativeInt(delta.cdpAccountCredits, 'cdpAccountCredits')
+
+      const [row] = await this.db
+        .update(users)
+        .set({
+          unifiedCredits: sql`${users.unifiedCredits} - ${dUnified}`,
+          cdpAccountCredits: sql`${users.cdpAccountCredits} - ${dCdp}`,
+        })
+        .where(
+          and(
+            eq(users.userId, userId),
+            eq(users.evm_payment_address, addr),
+            sql`${users.unifiedCredits} >= ${dUnified}`,
+            sql`${users.cdpAccountCredits} >= ${dCdp}`,
+          ),
+        )
+        .returning({
+          userId: users.userId,
+          evm_payment_address: users.evm_payment_address,
+          unifiedCredits: users.unifiedCredits,
+          cdpAccountCredits: users.cdpAccountCredits,
+        })
+
+      if (!row) {
+        throw new Error(`reduceCredits: insufficient balance or user not found userId=${userId}`)
+      }
+
+      return {
+        userId: row.userId,
+        evm_payment_address: row.evm_payment_address,
+        unifiedCredits: row.unifiedCredits ?? 0,
+        cdpAccountCredits: row.cdpAccountCredits ?? 0,
+      } as UserRecord
+    } catch (err) {
+      this.handleError('_reduceCredits', err, { userId, evm_payment_address, delta })
     }
   }
 

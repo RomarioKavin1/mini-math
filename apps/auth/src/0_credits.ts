@@ -37,19 +37,11 @@ export async function main() {
 
   await client.post('/siwe/verify', { message: prepared, signature })
 
-  const newWallet = Wallet.createRandom()
   const grantCreditPayload: GrantCreditDeltaSchemaType = {
-    unifiedCredits: 1000,
-    userId: newWallet.address,
+    unifiedCredits: 100000000,
+    userId: wallet.address,
   }
 
   const grantPositiveCredits = await client.post('/increaseCredits', grantCreditPayload)
   console.log(grantPositiveCredits.data)
-
-  const removeCreditPayload: GrantCreditDeltaSchemaType = {
-    unifiedCredits: 1000,
-    userId: newWallet.address,
-  }
-  const removeCredits = await client.post('/decreaseCredits', removeCreditPayload)
-  console.log(removeCredits.data)
 }

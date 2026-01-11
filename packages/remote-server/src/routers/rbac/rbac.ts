@@ -7,9 +7,15 @@ import {
   RoleStore,
   UserStore,
 } from '@mini-math/rbac'
-import { handleGrantCredits, handleGrantRole, handleRevokeRole } from '../../rbac/index.js'
+import {
+  handleDecreaseCredits,
+  handleIncreaseCredits,
+  handleGrantRole,
+  handleRevokeRole,
+} from '../../rbac/index.js'
 
 export { doc } from './swagger.js'
+
 export function create(
   mustHaveOneOfTheRole: (roles: Role[]) => RequestHandler,
   roleStore: RoleStore,
@@ -25,11 +31,18 @@ export function create(
   )
 
   router.post(
-    '/grantCredits',
+    '/increaseCredits',
     requireAuth(),
     mustHaveOneOfTheRole([Role.PlatformOwner]),
     validateBody(GrantCreditDeltaSchema),
-    handleGrantCredits(userStore),
+    handleIncreaseCredits(userStore),
+  )
+  router.post(
+    '/decreaseCredits',
+    requireAuth(),
+    mustHaveOneOfTheRole([Role.PlatformOwner]),
+    validateBody(GrantCreditDeltaSchema),
+    handleDecreaseCredits(userStore),
   )
   router.post(
     '/revokeRole',
